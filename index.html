@@ -1,0 +1,93 @@
+---
+layout: default
+title: Dashboard
+---
+
+<section class="page-section" aria-labelledby="dashboard-title">
+  <div class="section-header">
+    <p class="eyebrow">Git-powered training log</p>
+    <h1 id="dashboard-title">Fitness Blog</h1>
+    <p class="section-lede">
+      A lightweight foundation for a Git-based fitness tracker on GitHub Pages.
+    </p>
+  </div>
+</section>
+
+<section class="page-section" id="workouts" aria-labelledby="workouts-title">
+  <div class="section-header">
+    <p class="eyebrow">Workout log</p>
+    <h2 id="workouts-title">Workouts</h2>
+    <p class="section-lede">
+      Entries are loaded from <code>_data/workouts.yml</code>.
+    </p>
+  </div>
+
+  {% if site.data.workouts and site.data.workouts.size > 0 %}
+    {% assign workouts = site.data.workouts | sort: 'date' | reverse %}
+    <div class="workout-list" role="list">
+      {% for workout in workouts %}
+        {% include workout-card.html workout=workout %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-state">No workouts have been logged yet.</p>
+  {% endif %}
+</section>
+
+<section class="page-section" id="charts" aria-labelledby="charts-title">
+  <div class="section-header">
+    <p class="eyebrow">Chart.js</p>
+    <h2 id="charts-title">Training Charts</h2>
+    <p class="section-lede">
+      Charts consume only the generated statistics JSON.
+    </p>
+  </div>
+
+  <div class="chart-grid">
+    {% include chart-card.html title="Weekly Volume" chart_key="weeklyVolume" chart_type="bar" %}
+    {% include chart-card.html title="Monthly Volume" chart_key="monthlyVolume" chart_type="bar" %}
+    {% include chart-card.html title="Yearly Volume" chart_key="yearlyVolume" chart_type="bar" %}
+    {% include chart-card.html title="Exercise Frequency" chart_key="exerciseFrequency" chart_type="bar" %}
+  </div>
+</section>
+
+<section class="page-section" id="statistics" aria-labelledby="statistics-title">
+  <div class="section-header">
+    <p class="eyebrow">Statistics engine</p>
+    <h2 id="statistics-title">Statistics JSON</h2>
+    <p class="section-lede">
+      Generated in the browser from workout data without modifying <code>_data/workouts.yml</code>.
+    </p>
+  </div>
+
+  <pre class="json-output" data-statistics-output>{}</pre>
+</section>
+
+<section class="page-section" aria-labelledby="foundation-title">
+  <div class="section-header">
+    <h2 id="foundation-title">Foundation</h2>
+  </div>
+
+  <div class="status-grid" role="list">
+    <article class="card status-card" role="listitem">
+      <span class="status-label">Jekyll</span>
+      <strong>Configured</strong>
+    </article>
+    <article class="card status-card" role="listitem">
+      <span class="status-label">GitHub Pages</span>
+      <strong>Ready</strong>
+    </article>
+    <article class="card status-card" role="listitem">
+      <span class="status-label">Layout</span>
+      <strong>Responsive</strong>
+    </article>
+  </div>
+</section>
+
+<script id="workout-data" type="application/json">
+  {% if site.data.workouts %}
+    {{ site.data.workouts | jsonify }}
+  {% else %}
+    []
+  {% endif %}
+</script>

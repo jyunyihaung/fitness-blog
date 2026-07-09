@@ -1,0 +1,31 @@
+title: Fitness Blog
+description: A Git-based fitness tracker running entirely on GitHub Pages.
+brand_initials: FB
+url: ""
+baseurl: ""
+lang: en
+timezone: UTC
+
+markdown: kramdown
+
+navigation:
+  - label: Dashboard
+    url: /
+  - label: Workouts
+    url: /#workouts
+  - label: Charts
+    url: /#charts
+  - label: Statistics
+    url: /#statistics
+  - label: Foundation
+    url: /#foundation-title
+
+exclude:
+  - AGENTS.md
+  - ARCHITECTURE.md
+  - DATA_MODEL.md
+  - ROADMAP.md
+  - UI_GUIDELINES.md
+  - Gemfile
+  - Gemfile.lock
+  - README.md

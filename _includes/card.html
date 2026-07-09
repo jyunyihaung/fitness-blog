@@ -1,0 +1,6 @@
+<article class="card {{ include.variant | default: 'content' }}-card">
+  {% if include.title %}
+    <h3 class="card-title">{{ include.title }}</h3>
+  {% endif %}
+  {{ include.content }}
+</article>

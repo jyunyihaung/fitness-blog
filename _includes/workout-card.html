@@ -1,0 +1,52 @@
+{% assign workout = include.workout %}
+
+<article class="card workout-card" role="listitem">
+  <header class="workout-card-header">
+    <div>
+      <p class="workout-date">
+        <time datetime="{{ workout.date | date: '%Y-%m-%d' }}">{{ workout.date | date: '%B %-d, %Y' }}</time>
+      </p>
+      <h3 class="workout-title">{{ workout.workout }}</h3>
+    </div>
+
+    {% if workout.duration %}
+      <p class="workout-duration">{{ workout.duration }} min</p>
+    {% endif %}
+  </header>
+
+  {% if workout.notes %}
+    <p class="workout-notes">{{ workout.notes }}</p>
+  {% endif %}
+
+  {% if workout.exercises and workout.exercises.size > 0 %}
+    <div class="exercise-list">
+      {% for exercise in workout.exercises %}
+        <section class="exercise">
+          <h4>{{ exercise.name }}</h4>
+
+          {% if exercise.sets and exercise.sets.size > 0 %}
+            <ol class="set-list" aria-label="{{ exercise.name }} sets">
+              {% for set in exercise.sets %}
+                <li>
+                  <span>Set {{ forloop.index }}</span>
+                  <strong>
+                    {% if set.weight == 0 %}
+                      Bodyweight
+                    {% else %}
+                      {{ set.weight }} kg
+                    {% endif %}
+                    x {{ set.reps }}
+                  </strong>
+                </li>
+              {% endfor %}
+            </ol>
+          {% else %}
+            <p class="empty-state compact">No sets recorded.</p>
+          {% endif %}
+        </section>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-state compact">No exercises recorded.</p>
+  {% endif %}
+</article>

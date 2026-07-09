@@ -1,0 +1,59 @@
+- date: 2026-07-09
+  workout: Leg Day
+  duration: 90
+  notes: Focused on controlled depth and steady bracing.
+  exercises:
+    - name: Squat
+      sets:
+        - weight: 80
+          reps: 5
+        - weight: 80
+          reps: 5
+        - weight: 80
+          reps: 5
+    - name: Romanian Deadlift
+      sets:
+        - weight: 70
+          reps: 8
+        - weight: 70
+          reps: 8
+
+- date: 2026-07-07
+  workout: Upper Body
+  duration: 75
+  notes: Kept rest periods consistent.
+  exercises:
+    - name: Bench Press
+      sets:
+        - weight: 60
+          reps: 6
+        - weight: 60
+          reps: 6
+        - weight: 60
+          reps: 6
+    - name: Barbell Row
+      sets:
+        - weight: 55
+          reps: 8
+        - weight: 55
+          reps: 8
+
+- date: 2026-07-05
+  workout: Conditioning
+  duration: 45
+  notes: Easy pace with clean movement quality.
+  exercises:
+    - name: Kettlebell Swing
+      sets:
+        - weight: 24
+          reps: 15
+        - weight: 24
+          reps: 15
+        - weight: 24
+          reps: 15
+    - name: Push-up
+      sets:
+        - weight: 0
+          reps: 12
+        - weight: 0
+          reps: 12

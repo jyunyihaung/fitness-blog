@@ -1,0 +1,14 @@
+<article class="card chart-card">
+  <header class="chart-card-header">
+    <h3 class="card-title">{{ include.title }}</h3>
+  </header>
+
+  <div class="chart-frame">
+    <canvas
+      data-chart-key="{{ include.chart_key }}"
+      data-chart-type="{{ include.chart_type | default: 'bar' }}"
+      aria-label="{{ include.title }}"
+      role="img"
+    ></canvas>
+  </div>
+</article>
