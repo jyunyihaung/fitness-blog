@@ -1,8 +1,8 @@
 title: Fitness Blog
 description: A Git-based fitness tracker running entirely on GitHub Pages.
 brand_initials: FB
-url: ""
-baseurl: ""
+url: "https://jyunyihaung.github.io"
+baseurl: "/fitness-blog"
 lang: en
 timezone: UTC
 
