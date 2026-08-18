@@ -31,9 +31,18 @@ Deliverables: `ARCHITECTURE.md`, `DATA_MODEL.md`, and this milestone plan.
 
 - Add GIS token service with memory-only tokens and expiry handling.
 - Add typed Drive and Sheets clients.
-- Discover compatible spreadsheets, parse pasted URLs, and create workbooks.
+- Add the first-run setup screen with **選擇 Google Sheet 檔案** and
+  **建立 Google Sheet 檔案** as the two primary actions.
+- Use Google Picker with `drive.file` scope to choose an existing Sheets file,
+  validate it, and persist only its spreadsheet ID.
+- Create a `Powerlifting Training Tracker` workbook with all six version 1
+  sheets, headers, schema rows, settings, and default exercises.
 - Validate and non-destructively repair version 1 schemas.
 - Implement the Google Sheets repository and Settings connection UI.
+
+Phase 4 is complete only when cancellation, permission denial, token expiry,
+invalid schema, network failure, and partial initialization have actionable UI
+states and neither credentials nor workout records are persisted locally.
 
 ## Phase 5 — Domain logic
 
@@ -43,7 +52,8 @@ Deliverables: `ARCHITECTURE.md`, `DATA_MODEL.md`, and this milestone plan.
 
 ## Phase 6 — MVP pages
 
-- Welcome/setup flow.
+- Welcome/setup flow implementing the two-button requirements and acceptance
+  criteria in `ARCHITECTURE.md`.
 - Dashboard goal cards, latest workout, trend, and empty state.
 - Add Record nested exercise/set editor, preview, validation, and safe save.
 - Record List grouped sessions, expansion, detail, and delete confirmation.
