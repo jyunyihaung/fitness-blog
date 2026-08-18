@@ -2,13 +2,13 @@
 
 ## Project Vision
 
-Build a Git-based fitness tracker running entirely on GitHub Pages.
+Build a Google Sheets-backed fitness tracker running entirely on GitHub Pages.
 
 ## Core Principles
 
-1.  Git is the database.
+1.  Google Sheets is the workout database; Git stores application source.
 2.  Never hardcode workout data.
-3.  Read data from `_data/*.yml`.
+3.  Read workout data from the configured Google Sheet by column header.
 4.  Keep modules independent.
 5.  Write maintainable code.
 

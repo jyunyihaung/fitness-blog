@@ -5,10 +5,10 @@ title: Dashboard
 
 <section class="page-section" aria-labelledby="dashboard-title">
   <div class="section-header">
-    <p class="eyebrow">Git-powered training log</p>
+    <p class="eyebrow">Google Sheets-powered training log</p>
     <h1 id="dashboard-title">Fitness Blog</h1>
     <p class="section-lede">
-      A lightweight foundation for a Git-based fitness tracker on GitHub Pages.
+      A lightweight fitness tracker powered by Google Sheets and GitHub Pages.
     </p>
   </div>
 </section>
@@ -18,20 +18,13 @@ title: Dashboard
     <p class="eyebrow">Workout log</p>
     <h2 id="workouts-title">Workouts</h2>
     <p class="section-lede">
-      Entries are loaded from <code>_data/workouts.yml</code>.
+      Entries are loaded live from the configured Google Sheet.
     </p>
   </div>
 
-  {% if site.data.workouts and site.data.workouts.size > 0 %}
-    {% assign workouts = site.data.workouts | sort: 'date' | reverse %}
-    <div class="workout-list" role="list">
-      {% for workout in workouts %}
-        {% include workout-card.html workout=workout %}
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="empty-state">No workouts have been logged yet.</p>
-  {% endif %}
+  <div class="workout-list" role="list" data-workouts-output aria-live="polite">
+    <p class="empty-state">Loading workouts…</p>
+  </div>
 </section>
 
 <section class="page-section" id="charts" aria-labelledby="charts-title">
@@ -56,7 +49,7 @@ title: Dashboard
     <p class="eyebrow">Statistics engine</p>
     <h2 id="statistics-title">Statistics JSON</h2>
     <p class="section-lede">
-      Generated in the browser from workout data without modifying <code>_data/workouts.yml</code>.
+      Generated in the browser from the latest Google Sheets workout data.
     </p>
   </div>
 
@@ -83,11 +76,3 @@ title: Dashboard
     </article>
   </div>
 </section>
-
-<script id="workout-data" type="application/json">
-  {% if site.data.workouts %}
-    {{ site.data.workouts | jsonify }}
-  {% else %}
-    []
-  {% endif %}
-</script>

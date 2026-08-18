@@ -20,6 +20,13 @@
       {{ content }}
     </main>
     {% include footer.html %}
+    <script>
+      window.FitnessConfig = {
+        googleSheets: {
+          spreadsheetId: {{ site.google_sheets.spreadsheet_id | jsonify }}
+        }
+      };
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script type="module" src="{{ '/assets/js/main.js' | relative_url }}"></script>
   </body>

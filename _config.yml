@@ -1,10 +1,15 @@
 title: Fitness Blog
-description: A Git-based fitness tracker running entirely on GitHub Pages.
+description: A Google Sheets-powered fitness tracker running on GitHub Pages.
 brand_initials: FB
 url: "https://jyunyihaung.github.io"
 baseurl: "/fitness-blog"
 lang: en
 timezone: UTC
+
+# Share the spreadsheet as "Anyone with the link can view". It must contain
+# Sessions and Sets sheets matching DATA_MODEL.md.
+google_sheets:
+  spreadsheet_id: ""
 
 markdown: kramdown
 
