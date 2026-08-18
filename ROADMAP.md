@@ -29,6 +29,10 @@ Deliverables: `ARCHITECTURE.md`, `DATA_MODEL.md`, and this milestone plan.
 
 ## Phase 4 — Google integration
 
+Status: in progress. The Jekyll client now contains the initial GIS token,
+Picker, workbook creation, validation, and private read path; typed clients,
+settings controls, tests, and production credential setup remain pending.
+
 - Add GIS token service with memory-only tokens and expiry handling.
 - Add typed Drive and Sheets clients.
 - Add the first-run setup screen with **選擇 Google Sheet 檔案** and

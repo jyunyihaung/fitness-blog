@@ -52,11 +52,26 @@ bundle exec jekyll serve
 
 ```yaml
 google_sheets:
-  spreadsheet_id: "SPREADSHEET_ID"
+  spreadsheet_id: "" # Optional public, read-only fallback
+  oauth_client_id: "YOUR_WEB_OAUTH_CLIENT_ID.apps.googleusercontent.com"
+  picker_api_key: "YOUR_RESTRICTED_BROWSER_API_KEY"
+  picker_app_id: "YOUR_GOOGLE_CLOUD_PROJECT_NUMBER"
 ```
 
-The dashboard fetches both sheets at runtime, joins rows using `session_id`, and
-generates all statistics in the browser. Do not commit API keys or credentials.
+For private spreadsheets, create a Google Cloud project and enable Google Sheets
+API, Google Drive API, and Google Picker API. Configure the OAuth consent screen,
+create a Web application OAuth client, and register the exact production and
+local JavaScript origins. Restrict the browser API key by HTTP referrer and limit
+it to Google Picker API.
+
+The OAuth client ID, restricted browser API key, and project number are public
+browser configuration, not secrets. Never add an OAuth client secret or access
+token to this repository. Access tokens are kept in memory only.
+
+When no public fallback is configured, the first-run screen lets the user select
+an existing compatible spreadsheet or create a complete version 1 workbook. The
+selected spreadsheet ID is saved locally; a fresh user gesture is required to
+authorize private data after a page reload.
 
 ## Future
 
