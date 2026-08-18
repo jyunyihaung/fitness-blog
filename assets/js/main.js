@@ -144,13 +144,33 @@ async function runSetupOperation(button, workingText, operation) {
   }
 }
 
-function initializeOAuthSetup() {
+async function initializeOAuthSetup() {
   const config = window.FitnessConfig?.googleSheets ?? {};
   const oauth = new GoogleOAuthClient(config.oauthClientId);
   const selectButton = document.querySelector("[data-select-sheet]");
   const createButton = document.querySelector("[data-create-sheet]");
   const reconnectButton = document.querySelector("[data-reconnect-sheet]");
   const selected = getSelectedSpreadsheet();
+
+  if (!config.oauthClientId?.trim()) {
+    setSetupBusy(true);
+    setSetupStatus("網站尚未完成 Google OAuth 設定，請聯絡網站管理者。", "error");
+    document.documentElement.dataset.ready = "configuration-error";
+    return false;
+  }
+
+  setSetupBusy(true);
+  setSetupStatus("正在準備 Google 授權…");
+  try {
+    // Load GIS before a user gesture so mobile browsers do not block the
+    // authorization popup while waiting for a remote script to download.
+    await oauth.initialize();
+  } catch (error) {
+    setSetupStatus(describeError(error), "error");
+    document.documentElement.dataset.ready = "configuration-error";
+    return false;
+  }
+  setSetupBusy(false);
 
   if (selected) {
     reconnectButton.hidden = false;
@@ -183,15 +203,16 @@ function initializeOAuthSetup() {
     const spreadsheet = await validateSpreadsheet(current.id, accessToken);
     await loadDashboard(spreadsheet, accessToken);
   }));
+  return true;
 }
 
 async function initializeApp() {
-  initializeOAuthSetup();
   setAppVisible(false);
+  const oauthReady = await initializeOAuthSetup();
 
   const publicSpreadsheetId = window.FitnessConfig?.googleSheets?.spreadsheetId?.trim();
   if (!publicSpreadsheetId) {
-    document.documentElement.dataset.ready = "setup";
+    if (oauthReady) document.documentElement.dataset.ready = "setup";
     return;
   }
 

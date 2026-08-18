@@ -10,8 +10,13 @@ timezone: UTC
 # Sessions and Sets sheets matching DATA_MODEL.md.
 google_sheets:
   spreadsheet_id: ""
+  # Public browser configuration. Register `url` above (without `baseurl`) as
+  # an Authorized JavaScript origin for this Web application OAuth client.
   oauth_client_id: ""
+  # Restrict this browser key to Google Picker API and this Pages URL:
+  # https://jyunyihaung.github.io/fitness-blog/*
   picker_api_key: ""
+  # Google Cloud project number (digits), not its project ID.
   picker_app_id: ""
 
 markdown: kramdown

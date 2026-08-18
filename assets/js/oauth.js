@@ -34,12 +34,24 @@ export class GoogleOAuthClient {
     this.tokenClient = null;
     this.accessToken = null;
     this.expiresAt = 0;
+    this.initialization = null;
   }
 
   async initialize() {
     if (!this.clientId) throw new Error("Google OAuth client ID is not configured.");
-    await loadScript(GIS_SRC, "google-identity-services");
-    if (!window.google?.accounts?.oauth2) throw new Error("Google Identity Services is unavailable.");
+    if (!this.initialization) {
+      this.initialization = loadScript(GIS_SRC, "google-identity-services")
+        .then(() => {
+          if (!window.google?.accounts?.oauth2) {
+            throw new Error("Google Identity Services is unavailable.");
+          }
+        })
+        .catch((error) => {
+          this.initialization = null;
+          throw error;
+        });
+    }
+    return this.initialization;
   }
 
   async requestAccessToken() {
