@@ -34,17 +34,19 @@ function parseCsv(text) {
   return rows;
 }
 
+import { readRanges } from "./google-sheets.js";
+
 function rowsToRecords(rows, requiredHeaders) {
   const [headers = [], ...values] = rows;
-  const normalizedHeaders = headers.map((header) => header.trim());
+  const normalizedHeaders = headers.map((header) => String(header).trim());
   const missingHeaders = requiredHeaders.filter((header) => !normalizedHeaders.includes(header));
   if (missingHeaders.length > 0) {
     throw new Error(`Missing required columns: ${missingHeaders.join(", ")}.`);
   }
   return values
-    .filter((row) => row.some((value) => value.trim()))
+    .filter((row) => row.some((value) => String(value ?? "").trim()))
     .map((row) => Object.fromEntries(
-      normalizedHeaders.map((header, index) => [header, row[index]?.trim() ?? ""])
+      normalizedHeaders.map((header, index) => [header, String(row[index] ?? "").trim()])
     ));
 }
 
@@ -126,15 +128,24 @@ async function fetchSheet(spreadsheetId, sheetName, requiredHeaders) {
   }
 }
 
-export async function getWorkoutData(config = window.FitnessConfig) {
-  const spreadsheetId = config?.googleSheets?.spreadsheetId?.trim();
+export async function getWorkoutData(options = {}) {
+  const config = window.FitnessConfig;
+  const spreadsheetId = options.spreadsheetId || config?.googleSheets?.spreadsheetId?.trim();
   if (!spreadsheetId) {
     throw new Error("Google Sheets spreadsheet ID is not configured.");
   }
 
-  const [sessions, sets] = await Promise.all([
-    fetchSheet(spreadsheetId, "Sessions", ["session_id", "training_date", "title"]),
-    fetchSheet(spreadsheetId, "Sets", ["session_id", "exercise_name", "set_order", "weight_kg", "reps"]),
-  ]);
+  let sessions;
+  let sets;
+  if (options.accessToken) {
+    const [sessionRows, setRows] = await readRanges(spreadsheetId, options.accessToken, ["Sessions", "Sets"]);
+    sessions = rowsToRecords(sessionRows, ["session_id", "training_date", "title"]);
+    sets = rowsToRecords(setRows, ["session_id", "exercise_name", "set_order", "weight_kg", "reps"]);
+  } else {
+    [sessions, sets] = await Promise.all([
+      fetchSheet(spreadsheetId, "Sessions", ["session_id", "training_date", "title"]),
+      fetchSheet(spreadsheetId, "Sets", ["session_id", "exercise_name", "set_order", "weight_kg", "reps"]),
+    ]);
+  }
   return mapSheetRecordsToWorkouts(sessions, sets);
 }

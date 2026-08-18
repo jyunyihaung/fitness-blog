@@ -238,6 +238,62 @@ code {
   box-shadow: var(--shadow-soft);
 }
 
+.setup-panel {
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.setup-card,
+.setup-actions {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.setup-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.button {
+  min-height: 3rem;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button.primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+  color: #ffffff;
+}
+
+.button:hover:not(:disabled) {
+  border-color: var(--color-accent-strong);
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.setup-status {
+  min-height: 1.5rem;
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.setup-status[data-state="error"] {
+  color: var(--color-focus);
+}
+
+[hidden] {
+  display: none !important;
+}
+
 .card-title {
   margin-bottom: 0;
   font-size: 1rem;
@@ -392,6 +448,10 @@ code {
 }
 
 @media (max-width: 44rem) {
+  .setup-actions {
+    grid-template-columns: 1fr;
+  }
+
   .site-nav {
     align-items: flex-start;
     flex-direction: column;

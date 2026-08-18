@@ -23,7 +23,10 @@
     <script>
       window.FitnessConfig = {
         googleSheets: {
-          spreadsheetId: {{ site.google_sheets.spreadsheet_id | jsonify }}
+          spreadsheetId: {{ site.google_sheets.spreadsheet_id | jsonify }},
+          oauthClientId: {{ site.google_sheets.oauth_client_id | jsonify }},
+          pickerApiKey: {{ site.google_sheets.picker_api_key | jsonify }},
+          pickerAppId: {{ site.google_sheets.picker_app_id | jsonify }}
         }
       };
     </script>

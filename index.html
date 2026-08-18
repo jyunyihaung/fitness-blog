@@ -13,7 +13,25 @@ title: Dashboard
   </div>
 </section>
 
-<section class="page-section" id="workouts" aria-labelledby="workouts-title">
+<section class="page-section setup-panel" aria-labelledby="setup-title" data-setup>
+  <div class="card setup-card">
+    <div class="section-header">
+      <p class="eyebrow">Google Sheets setup</p>
+      <h2 id="setup-title">連接你的訓練資料</h2>
+      <p class="section-lede">
+        選擇既有的訓練試算表，或建立一份包含完整欄位的新試算表。
+      </p>
+    </div>
+    <div class="setup-actions">
+      <button class="button primary" type="button" data-select-sheet>選擇 Google Sheet 檔案</button>
+      <button class="button" type="button" data-create-sheet>建立 Google Sheet 檔案</button>
+      <button class="button" type="button" data-reconnect-sheet hidden>重新連線已選擇的檔案</button>
+    </div>
+    <p class="setup-status" data-setup-status role="status" aria-live="polite"></p>
+  </div>
+</section>
+
+<section class="page-section" id="workouts" aria-labelledby="workouts-title" data-app-content hidden>
   <div class="section-header">
     <p class="eyebrow">Workout log</p>
     <h2 id="workouts-title">Workouts</h2>
@@ -27,7 +45,7 @@ title: Dashboard
   </div>
 </section>
 
-<section class="page-section" id="charts" aria-labelledby="charts-title">
+<section class="page-section" id="charts" aria-labelledby="charts-title" data-app-content hidden>
   <div class="section-header">
     <p class="eyebrow">Chart.js</p>
     <h2 id="charts-title">Training Charts</h2>
@@ -44,7 +62,7 @@ title: Dashboard
   </div>
 </section>
 
-<section class="page-section" id="statistics" aria-labelledby="statistics-title">
+<section class="page-section" id="statistics" aria-labelledby="statistics-title" data-app-content hidden>
   <div class="section-header">
     <p class="eyebrow">Statistics engine</p>
     <h2 id="statistics-title">Statistics JSON</h2>
@@ -56,7 +74,7 @@ title: Dashboard
   <pre class="json-output" data-statistics-output>{}</pre>
 </section>
 
-<section class="page-section" aria-labelledby="foundation-title">
+<section class="page-section" aria-labelledby="foundation-title" data-app-content hidden>
   <div class="section-header">
     <h2 id="foundation-title">Foundation</h2>
   </div>

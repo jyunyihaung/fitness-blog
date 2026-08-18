@@ -10,6 +10,9 @@ timezone: UTC
 # Sessions and Sets sheets matching DATA_MODEL.md.
 google_sheets:
   spreadsheet_id: ""
+  oauth_client_id: ""
+  picker_api_key: ""
+  picker_app_id: ""
 
 markdown: kramdown
 
