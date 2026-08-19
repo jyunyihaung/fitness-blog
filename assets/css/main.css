@@ -226,6 +226,78 @@ code {
   gap: var(--space-4);
 }
 
+.section-header-with-action {
+  display: flex;
+  max-width: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.goal-card-grid,
+.goal-editor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.goal-card,
+.goal-editor,
+.goals-form,
+.goal-connect {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.goal-target,
+.goal-progress-text,
+.goal-estimate,
+.goal-date,
+.goal-connect p {
+  margin: 0;
+}
+
+.goal-target {
+  font-size: 1.5rem;
+}
+
+.goal-card progress {
+  width: 100%;
+  height: 0.75rem;
+  accent-color: var(--color-accent);
+}
+
+.goal-progress-text,
+.goal-estimate,
+.goal-date {
+  color: var(--color-muted);
+}
+
+.goals-page {
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+.goal-connect,
+.goals-form {
+  margin-top: var(--space-6);
+}
+
+.goal-connect {
+  justify-items: start;
+}
+
+.goal-editor {
+  min-width: 0;
+  margin: 0;
+}
+
+.goal-editor legend {
+  padding: 0 var(--space-2);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
 .chart-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -637,6 +709,15 @@ code {
 
   .status-grid {
     grid-template-columns: 1fr;
+  }
+
+  .goal-card-grid,
+  .goal-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header-with-action {
+    flex-direction: column;
   }
 
   .chart-grid {

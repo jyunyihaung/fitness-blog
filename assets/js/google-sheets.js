@@ -193,4 +193,57 @@ export async function appendWorkoutRecord(spreadsheetId, accessToken, record) {
   return { sessionId: record.session.session_id };
 }
 
+export async function upsertGoals(spreadsheetId, accessToken, goals) {
+  const fields = encodeURIComponent("sheets.properties(sheetId,title)");
+  const [metadata, valuesByRange] = await Promise.all([
+    apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=${fields}`, accessToken),
+    readRanges(spreadsheetId, accessToken, ["Goals"]),
+  ]);
+  const goalSheet = metadata.sheets?.find((sheet) => sheet.properties?.title === "Goals");
+  const sheetId = goalSheet?.properties?.sheetId;
+  if (!Number.isInteger(sheetId)) throw new Error("Missing required sheet: Goals.");
+
+  const rows = valuesByRange[0] ?? [];
+  const headers = (rows[0] ?? []).map((header) => String(header).trim());
+  const missing = HEADERS.Goals.filter((header) => !headers.includes(header));
+  if (missing.length > 0) throw new Error(`Goals is missing required columns: ${missing.join(", ")}.`);
+
+  const existingRows = rows.slice(1).map((values, index) => ({
+    rowIndex: index + 1,
+    record: Object.fromEntries(headers.map((header, columnIndex) => [header, String(values[columnIndex] ?? "").trim()])),
+  }));
+  const byId = new Map(existingRows.filter((row) => row.record.goal_id).map((row) => [row.record.goal_id, row]));
+  const byLift = new Map(existingRows.filter((row) => row.record.lift).map((row) => [row.record.lift, row]));
+  const requests = goals.map((goal) => {
+    const existing = byId.get(goal.goal_id) ?? byLift.get(goal.lift);
+    if (!existing) {
+      return {
+        appendCells: {
+          sheetId,
+          rows: [toAppendRow(headers, goal)],
+          fields: "userEnteredValue",
+        },
+      };
+    }
+    return {
+      updateCells: {
+        range: {
+          sheetId,
+          startRowIndex: existing.rowIndex,
+          endRowIndex: existing.rowIndex + 1,
+          startColumnIndex: 0,
+          endColumnIndex: headers.length,
+        },
+        rows: [toAppendRow(headers, goal)],
+        fields: "userEnteredValue",
+      },
+    };
+  });
+  if (requests.length === 0) return;
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests }),
+  });
+}
+
 export { HEADERS };

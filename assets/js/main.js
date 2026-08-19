@@ -1,8 +1,9 @@
 import { getWorkoutData } from "./data.js";
+import { createGoalProgress, parseGoals } from "./goals.js";
 import { createStatistics } from "./stats.js";
 import { renderCharts } from "./charts.js";
 import { GoogleOAuthClient } from "./oauth.js";
-import { createTrainingSpreadsheet, pickSpreadsheet, validateSpreadsheet } from "./google-sheets.js";
+import { createTrainingSpreadsheet, pickSpreadsheet, readRanges, validateSpreadsheet } from "./google-sheets.js";
 import { getSelectedSpreadsheet, saveSelectedSpreadsheet } from "./preferences.js";
 
 let activeCharts = [];
@@ -82,6 +83,31 @@ function renderStatistics(statistics) {
   window.FitnessStats = statistics;
 }
 
+function renderGoals(goals) {
+  const output = document.querySelector("[data-goals-output]");
+  if (!output) return;
+  output.replaceChildren();
+  if (goals.length === 0) {
+    appendTextElement(output, "p", "empty-state", "尚未設定訓練目標。");
+    return;
+  }
+  goals.forEach((goal) => {
+    const card = document.createElement("article");
+    card.className = "card goal-card";
+    appendTextElement(card, "p", "eyebrow", goal.label);
+    appendTextElement(card, "h3", "goal-target", `${goal.currentWeightKg || 0} / ${goal.targetWeightKg} kg`);
+    const progress = document.createElement("progress");
+    progress.max = 100;
+    progress.value = goal.displayProgress;
+    progress.setAttribute("aria-label", `${goal.label}目標進度 ${goal.progress}%`);
+    card.append(progress);
+    appendTextElement(card, "p", "goal-progress-text", `目標進度 ${goal.progress}%`);
+    appendTextElement(card, "p", "goal-estimate", `訓練估算 1RM：${goal.estimatedOneRepMax || "—"}${goal.estimatedOneRepMax ? " kg" : ""}`);
+    if (goal.targetDate) appendTextElement(card, "p", "goal-date", `目標日期：${goal.targetDate}`);
+    output.append(card);
+  });
+}
+
 function setAppVisible(visible) {
   document.querySelector("[data-setup]").hidden = visible;
   document.querySelectorAll("[data-app-content]").forEach((section) => {
@@ -111,11 +137,17 @@ function finishSetupOperation(activeButton) {
 }
 
 async function loadDashboard(spreadsheet, accessToken) {
-  const workouts = await getWorkoutData({ spreadsheetId: spreadsheet.id, accessToken });
+  const [workouts, goals] = await Promise.all([
+    getWorkoutData({ spreadsheetId: spreadsheet.id, accessToken }),
+    accessToken
+      ? readRanges(spreadsheet.id, accessToken, ["Goals"]).then(([rows]) => parseGoals(rows))
+      : Promise.resolve([]),
+  ]);
   const statistics = createStatistics(workouts);
   activeCharts.forEach((chart) => chart.destroy());
   activeCharts = [];
   renderWorkouts(workouts);
+  renderGoals(createGoalProgress(goals, workouts));
   renderStatistics(statistics);
   setAppVisible(true);
   activeCharts = renderCharts(statistics);

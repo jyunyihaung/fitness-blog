@@ -82,7 +82,11 @@ function groupExercises(sets) {
     .sort((left, right) => toNumber(left.set_order) - toNumber(right.set_order))
     .forEach((set) => {
       const name = set.exercise_name || "Unknown exercise";
-      const exercise = exercises.get(name) ?? { name, sets: [] };
+      const exercise = exercises.get(name) ?? {
+        name,
+        category: set.exercise_category || "accessory",
+        sets: [],
+      };
       exercise.sets.push({
         weight: toNumber(set.weight_kg),
         reps: toNumber(set.reps),

@@ -9,6 +9,7 @@ deployment history.
 
 * Workout Log
 * Add workout records from desktop or mobile
+* Squat, bench press, and deadlift goals
 * Body Weight
 * Personal Records
 * Statistics
@@ -96,6 +97,11 @@ After connecting a spreadsheet, open **新增紀錄** to add a training session 
 its exercise sets. The form validates values in the browser, requests a fresh
 Google access token from the save action, and appends the Session and Sets in one
 Sheets batch request. Tokens and workout form data are not persisted locally.
+
+Open **訓練目標** to load and update squat, bench press, and deadlift goals. Goal
+progress uses the explicitly stored current and target weights. The Dashboard
+also shows an estimated 1RM calculated from recorded sets without overwriting
+the stored current weight.
 
 ## Future
 

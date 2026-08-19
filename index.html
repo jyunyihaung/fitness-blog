@@ -13,6 +13,20 @@ title: Dashboard
   </div>
 </section>
 
+<section class="page-section" id="goals" aria-labelledby="dashboard-goals-title" data-app-content hidden>
+  <div class="section-header section-header-with-action">
+    <div>
+      <p class="eyebrow">Training goals</p>
+      <h2 id="dashboard-goals-title">訓練目標</h2>
+      <p class="section-lede">目前設定與訓練紀錄估算的三大項進度。</p>
+    </div>
+    <a class="button button-link" href="{{ '/goals/' | relative_url }}">設定目標</a>
+  </div>
+  <div class="goal-card-grid" data-goals-output>
+    <p class="empty-state">尚未設定訓練目標。</p>
+  </div>
+</section>
+
 <section class="page-section setup-panel" aria-labelledby="setup-title" data-setup>
   <div class="card setup-card">
     <div class="section-header">

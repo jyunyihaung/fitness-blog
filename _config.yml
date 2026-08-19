@@ -26,6 +26,8 @@ navigation:
     url: /
   - label: 新增紀錄
     url: /record/
+  - label: 訓練目標
+    url: /goals/
   - label: Workouts
     url: /#workouts
   - label: Charts
