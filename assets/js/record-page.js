@@ -27,7 +27,17 @@ function renumberEditors() {
 }
 
 function addSet(exercise) {
-  exercise.querySelector("[data-sets]").append(setTemplate.content.cloneNode(true));
+  const previousSet = exercise.querySelector("[data-set]:last-child");
+  const fragment = setTemplate.content.cloneNode(true);
+  const nextSet = fragment.querySelector("[data-set]");
+  if (previousSet) {
+    nextSet.querySelector("[data-set-weight]").value = previousSet.querySelector("[data-set-weight]").value;
+    nextSet.querySelector("[data-set-reps]").value = previousSet.querySelector("[data-set-reps]").value;
+    nextSet.querySelector("[data-set-rpe]").value = previousSet.querySelector("[data-set-rpe]").value;
+    nextSet.querySelector("[data-set-type]").value = previousSet.querySelector("[data-set-type]").value;
+    nextSet.querySelector("[data-set-warmup]").checked = previousSet.querySelector("[data-set-warmup]").checked;
+  }
+  exercise.querySelector("[data-sets]").append(fragment);
   renumberEditors();
 }
 
