@@ -143,4 +143,54 @@ export async function createTrainingSpreadsheet(accessToken) {
   return validateSpreadsheet(spreadsheetId, accessToken);
 }
 
+function toAppendRow(headers, record) {
+  return {
+    values: headers.map((header) => ({
+      userEnteredValue: { stringValue: String(record[header] ?? "") },
+    })),
+  };
+}
+
+export async function appendWorkoutRecord(spreadsheetId, accessToken, record) {
+  const fields = encodeURIComponent("sheets.properties(sheetId,title)");
+  const [metadata, valuesByRange] = await Promise.all([
+    apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=${fields}`, accessToken),
+    readRanges(spreadsheetId, accessToken, ["Sessions!1:1", "Sets!1:1"]),
+  ]);
+  const sheetIds = new Map(metadata.sheets?.map((sheet) => [
+    sheet.properties?.title,
+    sheet.properties?.sheetId,
+  ]));
+  const sessionHeaders = (valuesByRange[0]?.[0] ?? []).map(String);
+  const setHeaders = (valuesByRange[1]?.[0] ?? []).map(String);
+
+  for (const [title, headers] of [["Sessions", sessionHeaders], ["Sets", setHeaders]]) {
+    if (!Number.isInteger(sheetIds.get(title))) throw new Error(`Missing required sheet: ${title}.`);
+    const missing = HEADERS[title].filter((header) => !headers.includes(header));
+    if (missing.length > 0) throw new Error(`${title} is missing required columns: ${missing.join(", ")}.`);
+  }
+
+  const requests = [
+    {
+      appendCells: {
+        sheetId: sheetIds.get("Sessions"),
+        rows: [toAppendRow(sessionHeaders, record.session)],
+        fields: "userEnteredValue",
+      },
+    },
+    {
+      appendCells: {
+        sheetId: sheetIds.get("Sets"),
+        rows: record.sets.map((set) => toAppendRow(setHeaders, set)),
+        fields: "userEnteredValue",
+      },
+    },
+  ];
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests }),
+  });
+  return { sessionId: record.session.session_id };
+}
+
 export { HEADERS };

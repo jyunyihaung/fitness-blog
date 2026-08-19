@@ -56,6 +56,10 @@ states and neither credentials nor workout records are persisted locally.
 
 ## Phase 6 — MVP pages
 
+Status: in progress. The Jekyll client now includes the first mobile-friendly
+Add Record form, validation, OAuth-on-save, and batched Sessions/Sets append;
+editing, deletion, typed migration, and automated tests remain pending.
+
 - Welcome/setup flow implementing the two-button requirements and acceptance
   criteria in `ARCHITECTURE.md`.
 - Dashboard goal cards, latest workout, trend, and empty state.

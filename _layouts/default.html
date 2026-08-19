@@ -31,7 +31,10 @@
         }
       };
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module" src="{{ '/assets/js/main.js' | relative_url }}"></script>
+    {% unless page.hide_charts %}
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% endunless %}
+    {% assign page_script = page.script | default: '/assets/js/main.js' %}
+    <script type="module" src="{{ page_script | relative_url }}"></script>
   </body>
 </html>

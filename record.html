@@ -1,0 +1,125 @@
+---
+layout: default
+title: 新增訓練紀錄
+permalink: /record/
+script: /assets/js/record-page.js
+hide_charts: true
+---
+
+<section class="page-section record-page" aria-labelledby="record-title">
+  <div class="section-header">
+    <p class="eyebrow">Training record</p>
+    <h1 id="record-title">新增訓練紀錄</h1>
+    <p class="section-lede">記錄本次訓練、動作與每一組內容，資料會直接寫入已連接的 Google Sheet。</p>
+  </div>
+
+  <div class="empty-state" data-connection-message hidden></div>
+
+  <form class="record-form" data-record-form data-dashboard-url="{{ '/' | relative_url }}" novalidate>
+    <fieldset class="card form-section">
+      <legend>訓練資訊</legend>
+      <div class="form-grid">
+        <label class="field">
+          <span>訓練日期 <span aria-hidden="true">*</span></span>
+          <input type="date" name="training_date" required>
+        </label>
+        <label class="field">
+          <span>訓練名稱 <span aria-hidden="true">*</span></span>
+          <input type="text" name="title" required maxlength="120" autocomplete="off" placeholder="例如：深蹲訓練">
+        </label>
+        <label class="field">
+          <span>體重（kg）</span>
+          <input type="number" name="body_weight_kg" min="0.5" step="0.1" inputmode="decimal">
+        </label>
+        <label class="field">
+          <span>訓練時間（分鐘）</span>
+          <input type="number" name="duration_minutes" min="1" step="1" inputmode="numeric">
+        </label>
+        <label class="field field-wide">
+          <span>備註</span>
+          <textarea name="notes" rows="3" maxlength="1000"></textarea>
+        </label>
+      </div>
+    </fieldset>
+
+    <section class="form-section" aria-labelledby="exercises-title">
+      <div class="form-section-header">
+        <div>
+          <p class="eyebrow">Exercises</p>
+          <h2 id="exercises-title">訓練動作</h2>
+        </div>
+        <button class="button" type="button" data-add-exercise>＋ 新增動作</button>
+      </div>
+      <div class="exercise-editor-list" data-exercises></div>
+    </section>
+
+    <div class="validation-summary" data-validation-summary role="alert" hidden></div>
+    <p class="save-status" data-save-status role="status" aria-live="polite"></p>
+
+    <div class="form-actions">
+      <button class="button primary" type="submit" data-save-record>儲存訓練紀錄</button>
+      <a class="button button-link" href="{{ '/' | relative_url }}">取消</a>
+    </div>
+  </form>
+</section>
+
+<template data-exercise-template>
+  <fieldset class="card exercise-editor" data-exercise>
+    <legend>動作 <span data-exercise-number></span></legend>
+    <div class="exercise-editor-header">
+      <div class="form-grid exercise-fields">
+        <label class="field">
+          <span>動作名稱 *</span>
+          <input type="text" data-exercise-name maxlength="120" autocomplete="off" placeholder="例如：Squat">
+        </label>
+        <label class="field">
+          <span>分類</span>
+          <select data-exercise-category>
+            <option value="squat">深蹲</option>
+            <option value="bench">臥推</option>
+            <option value="deadlift">硬舉</option>
+            <option value="accessory" selected>輔助動作</option>
+          </select>
+        </label>
+      </div>
+      <button class="button danger-button" type="button" data-remove-exercise>刪除動作</button>
+    </div>
+    <div class="set-editor-list" data-sets></div>
+    <button class="button compact-button" type="button" data-add-set>＋ 新增一組</button>
+  </fieldset>
+</template>
+
+<template data-set-template>
+  <fieldset class="set-editor" data-set>
+    <legend>第 <span data-set-number></span> 組</legend>
+    <div class="set-fields">
+      <label class="field">
+        <span>重量 kg *</span>
+        <input type="number" data-set-weight min="0" step="0.5" inputmode="decimal" value="0">
+      </label>
+      <label class="field">
+        <span>次數 *</span>
+        <input type="number" data-set-reps min="1" step="1" inputmode="numeric" value="1">
+      </label>
+      <label class="field">
+        <span>RPE</span>
+        <input type="number" data-set-rpe min="1" max="10" step="0.5" inputmode="decimal">
+      </label>
+      <label class="field">
+        <span>組別</span>
+        <select data-set-type>
+          <option value="working" selected>工作組</option>
+          <option value="warmup">暖身組</option>
+          <option value="top">Top set</option>
+          <option value="backoff">Back-off</option>
+          <option value="amrap">AMRAP</option>
+        </select>
+      </label>
+      <label class="check-field">
+        <input type="checkbox" data-set-warmup>
+        <span>暖身</span>
+      </label>
+      <button class="button danger-button compact-button" type="button" data-remove-set>刪除</button>
+    </div>
+  </fieldset>
+</template>

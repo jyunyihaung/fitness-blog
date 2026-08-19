@@ -24,6 +24,8 @@ markdown: kramdown
 navigation:
   - label: Dashboard
     url: /
+  - label: 新增紀錄
+    url: /record/
   - label: Workouts
     url: /#workouts
   - label: Charts

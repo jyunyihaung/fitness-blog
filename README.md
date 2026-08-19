@@ -8,6 +8,7 @@ deployment history.
 ## Features
 
 * Workout Log
+* Add workout records from desktop or mobile
 * Body Weight
 * Personal Records
 * Statistics
@@ -90,6 +91,11 @@ When no public fallback is configured, the first-run screen lets the user select
 an existing compatible spreadsheet or create a complete version 1 workbook. The
 selected spreadsheet ID is saved locally; a fresh user gesture is required to
 authorize private data after a page reload.
+
+After connecting a spreadsheet, open **新增紀錄** to add a training session and
+its exercise sets. The form validates values in the browser, requests a fresh
+Google access token from the save action, and appends the Session and Sets in one
+Sheets batch request. Tokens and workout form data are not persisted locally.
 
 ## Future
 
