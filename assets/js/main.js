@@ -2,9 +2,10 @@ import { getWorkoutData } from "./data.js";
 import { createGoalProgress, parseGoals } from "./goals.js";
 import { createStatistics } from "./stats.js";
 import { renderCharts } from "./charts.js";
-import { GoogleOAuthClient } from "./oauth.js";
+import { googleAuth } from "./auth-service.js";
+import { appState } from "./app-state.js";
 import { createTrainingSpreadsheet, pickSpreadsheet, readRanges, validateSpreadsheet } from "./google-sheets.js";
-import { getSelectedSpreadsheet, saveSelectedSpreadsheet } from "./preferences.js";
+import { getSelectedSpreadsheet } from "./preferences.js";
 
 let activeCharts = [];
 
@@ -144,6 +145,9 @@ async function loadDashboard(spreadsheet, accessToken) {
       : Promise.resolve([]),
   ]);
   const statistics = createStatistics(workouts);
+  appState.set("workouts", workouts);
+  appState.set("goals", goals);
+  appState.set("statistics", statistics);
   activeCharts.forEach((chart) => chart.destroy());
   activeCharts = [];
   renderWorkouts(workouts);
@@ -178,7 +182,6 @@ async function runSetupOperation(button, workingText, operation) {
 
 async function initializeOAuthSetup() {
   const config = window.FitnessConfig?.googleSheets ?? {};
-  const oauth = new GoogleOAuthClient(config.oauthClientId);
   const selectButton = document.querySelector("[data-select-sheet]");
   const createButton = document.querySelector("[data-create-sheet]");
   const reconnectButton = document.querySelector("[data-reconnect-sheet]");
@@ -190,6 +193,7 @@ async function initializeOAuthSetup() {
     document.documentElement.dataset.ready = "configuration-error";
     return false;
   }
+  const oauth = googleAuth.configure(config.oauthClientId);
 
   setSetupBusy(true);
   setSetupStatus("正在準備 Google 授權…");
@@ -217,14 +221,14 @@ async function initializeOAuthSetup() {
       appId: config.pickerAppId,
     });
     const spreadsheet = await validateSpreadsheet(picked.id, accessToken);
-    saveSelectedSpreadsheet({ ...spreadsheet, name: picked.name || spreadsheet.name });
+    appState.setSelectedSpreadsheet({ ...spreadsheet, name: picked.name || spreadsheet.name });
     await loadDashboard(spreadsheet, accessToken);
   }));
 
   createButton.addEventListener("click", () => runSetupOperation(createButton, "正在建立 Google Sheet…", async () => {
     const accessToken = await oauth.requestAccessToken();
     const spreadsheet = await createTrainingSpreadsheet(accessToken);
-    saveSelectedSpreadsheet(spreadsheet);
+    appState.setSelectedSpreadsheet(spreadsheet);
     await loadDashboard(spreadsheet, accessToken);
   }));
 
@@ -260,3 +264,26 @@ async function initializeApp() {
 
 if (document.readyState !== "loading") initializeApp();
 else document.addEventListener("DOMContentLoaded", initializeApp);
+
+window.addEventListener("fitness:data-changed", async () => {
+  const spreadsheet = getSelectedSpreadsheet();
+  const accessToken = googleAuth.getValidAccessToken();
+  if (!spreadsheet?.id || !accessToken) return;
+  try {
+    await loadDashboard(spreadsheet, accessToken);
+  } catch (error) {
+    console.error("Unable to refresh dashboard data.", error);
+  }
+});
+
+window.addEventListener("fitness:route-change", async (event) => {
+  if (event.detail.route !== "/dashboard") return;
+  const spreadsheet = getSelectedSpreadsheet();
+  const accessToken = googleAuth.getValidAccessToken();
+  if (!spreadsheet?.id || !accessToken) return;
+  try {
+    await loadDashboard(spreadsheet, accessToken);
+  } catch (error) {
+    console.error("Unable to load dashboard from the shared session.", error);
+  }
+});

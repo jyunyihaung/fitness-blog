@@ -1,8 +1,10 @@
 ---
 layout: default
 title: Dashboard
+script: /assets/js/app.js
 ---
 
+<div data-route-page="/dashboard" data-route-title="Dashboard">
 <section class="page-section" aria-labelledby="dashboard-title">
   <div class="section-header">
     <p class="eyebrow">Google Sheets-powered training log</p>
@@ -20,7 +22,7 @@ title: Dashboard
       <h2 id="dashboard-goals-title">訓練目標</h2>
       <p class="section-lede">目前設定與訓練紀錄估算的三大項進度。</p>
     </div>
-    <a class="button button-link" href="{{ '/goals/' | relative_url }}">設定目標</a>
+    <a class="button button-link" href="{{ '/#/goals' | relative_url }}">設定目標</a>
   </div>
   <div class="goal-card-grid" data-goals-output>
     <p class="empty-state">尚未設定訓練目標。</p>
@@ -108,3 +110,12 @@ title: Dashboard
     </article>
   </div>
 </section>
+</div>
+
+<div data-route-page="/record/new" data-route-title="新增訓練紀錄" hidden>
+  {% include pages/record.html %}
+</div>
+
+<div data-route-page="/goals" data-route-title="訓練目標" hidden>
+  {% include pages/goals.html %}
+</div>

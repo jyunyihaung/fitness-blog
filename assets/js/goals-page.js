@@ -1,7 +1,7 @@
 import { createGoalRecords, parseGoals, validateGoals } from "./goals.js";
+import { googleAuth } from "./auth-service.js";
+import { appState } from "./app-state.js";
 import { readRanges, upsertGoals, validateSpreadsheet } from "./google-sheets.js";
-import { GoogleOAuthClient } from "./oauth.js";
-import { getSelectedSpreadsheet } from "./preferences.js";
 
 const connectPanel = document.querySelector("[data-goal-connect]");
 const connectionMessage = document.querySelector("[data-goal-connection-message]");
@@ -69,20 +69,28 @@ function showValidation(errors) {
 }
 
 async function initialize() {
-  const spreadsheet = getSelectedSpreadsheet();
+  let spreadsheet = appState.get("selectedSpreadsheet");
   const clientId = window.FitnessConfig?.googleSheets?.oauthClientId?.trim();
-  if (!spreadsheet?.id) {
-    connectionMessage.textContent = "尚未連接 Google Sheet。請先回到 Dashboard 選擇或建立試算表。";
-    loadButton.disabled = true;
-    return;
-  }
+  const updateConnection = () => {
+    const connected = Boolean(spreadsheet?.id);
+    connectionMessage.textContent = connected
+      ? `已選擇：${spreadsheet.name}`
+      : "尚未連接 Google Sheet。請先回到 Dashboard 選擇或建立試算表。";
+    loadButton.disabled = !connected;
+  };
+  updateConnection();
+  window.addEventListener("fitness:state-change", (event) => {
+    if (event.detail.key !== "selectedSpreadsheet") return;
+    spreadsheet = event.detail.value;
+    updateConnection();
+  });
   if (!clientId) {
     connectionMessage.textContent = "網站尚未完成 Google OAuth 設定。";
     loadButton.disabled = true;
     return;
   }
 
-  const oauth = new GoogleOAuthClient(clientId);
+  const oauth = googleAuth.configure(clientId);
   setBusy(true);
   try {
     await oauth.initialize();
@@ -94,12 +102,13 @@ async function initialize() {
     return;
   }
   setBusy(false);
+  updateConnection();
 
   loadButton.addEventListener("click", async () => {
     setBusy(true);
     connectionMessage.textContent = "正在載入訓練目標…";
     try {
-      const token = await oauth.requestAccessToken();
+      const token = await oauth.getAccessToken();
       await validateSpreadsheet(spreadsheet.id, token);
       const [rows] = await readRanges(spreadsheet.id, token, ["Goals"]);
       populateGoals(parseGoals(rows));
@@ -130,6 +139,7 @@ async function initialize() {
         const editor = form.querySelector(`[data-goal][data-lift="${record.lift}"]`);
         editor.querySelector("[data-goal-id]").value = record.goal_id;
       });
+      window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "goals" } }));
       setStatus("訓練目標已儲存到 Google Sheet。", "success");
     } catch (error) {
       console.error("Unable to save goals.", error);

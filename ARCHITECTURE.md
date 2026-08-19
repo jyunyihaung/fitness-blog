@@ -6,6 +6,11 @@ This document defines the target architecture for the Powerlifting Training
 Tracker. The current Jekyll application remains deployable while the Vite and
 TypeScript client is introduced incrementally.
 
+The current Jekyll client now uses a single app shell and hash router for
+Dashboard, Add Record, and Goals. These routes share one memory-only
+`GoogleAuthService` instance and application state. The later Vite/TypeScript
+migration should preserve these runtime and security boundaries.
+
 The product specification supersedes the original "Git is the database"
 assumption for training records. Google Sheets is the source of truth. Git
 continues to hold application source, documentation, and deployment history.
@@ -78,6 +83,10 @@ loadingStatus
 errorState
 draftRecord
 ```
+
+The current JavaScript implementation begins this boundary in `app-state.js`;
+OAuth ownership is isolated in `auth-service.js`, routing in `router.js`, and
+`app.js` is the single browser entry point.
 
 State is refreshed from Google Sheets after mutations. A token is held only in
 memory and discarded on sign-out, expiry, or page reload.

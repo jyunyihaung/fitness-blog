@@ -1,6 +1,6 @@
 <header class="site-header">
   <nav class="site-nav" aria-label="Primary navigation">
-    <a class="brand" href="{{ '/' | relative_url }}" aria-label="{{ site.title | escape }} home">
+    <a class="brand" href="{{ '/#/dashboard' | relative_url }}" aria-label="{{ site.title | escape }} home">
       <span class="brand-mark" aria-hidden="true">{{ site.brand_initials | default: site.title | slice: 0, 2 }}</span>
       <span class="brand-text">{{ site.title }}</span>
     </a>
@@ -8,7 +8,8 @@
     <ul class="nav-list">
       {% for item in site.navigation %}
         <li>
-          <a href="{{ item.url | relative_url }}" {% if item.url == page.url %}aria-current="page"{% endif %}>
+          {% assign route_path = item.url | split: '#' | last %}
+          <a href="{{ item.url | relative_url }}" data-route-link="{{ route_path }}">
             {{ item.label }}
           </a>
         </li>

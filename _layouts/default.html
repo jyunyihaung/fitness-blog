@@ -23,6 +23,8 @@
     {% include footer.html %}
     <script>
       window.FitnessConfig = {
+        siteTitle: {{ site.title | jsonify }},
+        baseUrl: {{ '/' | relative_url | jsonify }},
         googleSheets: {
           spreadsheetId: {{ site.google_sheets.spreadsheet_id | jsonify }},
           oauthClientId: {{ site.google_sheets.oauth_client_id | jsonify }},
@@ -34,7 +36,7 @@
     {% unless page.hide_charts %}
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% endunless %}
-    {% assign page_script = page.script | default: '/assets/js/main.js' %}
+    {% assign page_script = page.script | default: '/assets/js/page.js' %}
     <script type="module" src="{{ page_script | relative_url }}?v={{ site.time | date: '%s' }}"></script>
   </body>
 </html>

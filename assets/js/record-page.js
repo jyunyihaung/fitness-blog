@@ -1,6 +1,6 @@
 import { appendWorkoutRecord } from "./google-sheets.js";
-import { GoogleOAuthClient } from "./oauth.js";
-import { getSelectedSpreadsheet } from "./preferences.js";
+import { googleAuth } from "./auth-service.js";
+import { appState } from "./app-state.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 
 const form = document.querySelector("[data-record-form]");
@@ -133,14 +133,22 @@ async function initialize() {
   exercisesOutput.addEventListener("click", handleEditorClick);
   addExercise();
 
-  const selectedSpreadsheet = getSelectedSpreadsheet();
+  let selectedSpreadsheet = appState.get("selectedSpreadsheet");
   const connectionMessage = document.querySelector("[data-connection-message]");
-  if (!selectedSpreadsheet?.id) {
-    connectionMessage.textContent = "尚未連接 Google Sheet。請先返回 Dashboard 選擇或建立試算表。";
-    connectionMessage.hidden = false;
-    saveButton.disabled = true;
-    return;
-  }
+  const updateConnection = () => {
+    const connected = Boolean(selectedSpreadsheet?.id);
+    connectionMessage.textContent = connected
+      ? `將寫入：${selectedSpreadsheet.name}`
+      : "尚未連接 Google Sheet。請先返回 Dashboard 選擇或建立試算表。";
+    connectionMessage.hidden = connected;
+    saveButton.disabled = !connected;
+  };
+  updateConnection();
+  window.addEventListener("fitness:state-change", (event) => {
+    if (event.detail.key !== "selectedSpreadsheet") return;
+    selectedSpreadsheet = event.detail.value;
+    updateConnection();
+  });
 
   const clientId = window.FitnessConfig?.googleSheets?.oauthClientId?.trim();
   if (!clientId) {
@@ -150,7 +158,7 @@ async function initialize() {
     return;
   }
 
-  const oauth = new GoogleOAuthClient(clientId);
+  const oauth = googleAuth.configure(clientId);
   setSaving(true);
   setStatus("正在準備 Google 授權…");
   try {
@@ -163,6 +171,7 @@ async function initialize() {
     return;
   }
   setSaving(false);
+  updateConnection();
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -174,15 +183,16 @@ async function initialize() {
     setSaving(true);
     setStatus("正在要求 Google 授權…");
     try {
-      const accessToken = await oauth.requestAccessToken();
+      const accessToken = await oauth.getAccessToken();
       setStatus("正在寫入 Google Sheet…");
       await appendWorkoutRecord(
         selectedSpreadsheet.id,
         accessToken,
         createWorkoutRecords(input),
       );
+      window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "record" } }));
       setStatus("訓練紀錄已儲存，正在返回 Dashboard。", "success");
-      window.location.assign(form.dataset.dashboardUrl);
+      window.location.hash = "/dashboard";
     } catch (error) {
       console.error("Unable to save workout record.", error);
       setStatus(describeError(error), error?.name === "AbortError" ? "idle" : "error");

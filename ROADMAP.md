@@ -19,6 +19,10 @@ Deliverables: `ARCHITECTURE.md`, `DATA_MODEL.md`, and this milestone plan.
 
 ## Phase 3 — Project foundation
 
+Status: partially implemented in the Jekyll client. A hash router, single app
+shell, shared memory-only OAuth service, app state, and accessible route focus
+management are now present; Vite, TypeScript, ESLint, and Vitest remain pending.
+
 - Add Vite, strict TypeScript, ESLint, Vitest, and `.env.example`.
 - Add hash router, app shell, responsive navigation, style tokens, and accessible
   loading/error/empty components.

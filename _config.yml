@@ -23,19 +23,11 @@ markdown: kramdown
 
 navigation:
   - label: Dashboard
-    url: /
+    url: /#/dashboard
   - label: 新增紀錄
-    url: /record/
+    url: /#/record/new
   - label: 訓練目標
-    url: /goals/
-  - label: Workouts
-    url: /#workouts
-  - label: Charts
-    url: /#charts
-  - label: Statistics
-    url: /#statistics
-  - label: Foundation
-    url: /#foundation-title
+    url: /#/goals
 
 exclude:
   - AGENTS.md

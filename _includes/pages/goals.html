@@ -1,56 +1,32 @@
----
-layout: default
-title: 訓練目標
-permalink: /goals/
-script: /assets/js/legacy-route.js
-hide_charts: true
----
-
-<section class="page-section goals-page" aria-labelledby="goals-title" data-legacy-route="/goals">
+<section class="page-section goals-page" aria-labelledby="goals-title">
   <div class="section-header">
     <p class="eyebrow">Training goals</p>
-    <h1 id="goals-title">訓練目標</h1>
+    <h1 id="goals-title" tabindex="-1">訓練目標</h1>
     <p class="section-lede">設定深蹲、臥推與硬舉的目前重量、目標重量及期限。</p>
   </div>
-
   <div class="card goal-connect" data-goal-connect>
     <p data-goal-connection-message>請連接 Google 帳號以載入目前的訓練目標。</p>
     <button class="button primary" type="button" data-load-goals>連線並載入目標</button>
   </div>
-
   <form class="goals-form" data-goals-form hidden novalidate>
     <div class="goal-editor-grid">
       {% assign goal_lifts = "squat:深蹲,bench:臥推,deadlift:硬舉" | split: "," %}
       {% for goal_lift in goal_lifts %}
         {% assign goal_parts = goal_lift | split: ":" %}
         <fieldset class="card goal-editor" data-goal data-lift="{{ goal_parts[0] }}">
-          <legend>{{ goal_parts[1] }}</legend>
-          <input type="hidden" data-goal-id>
-          <label class="field">
-            <span>目前重量（kg）</span>
-            <input type="number" data-current-weight min="0" step="0.5" inputmode="decimal">
-          </label>
-          <label class="field">
-            <span>目標重量（kg）</span>
-            <input type="number" data-target-weight min="0.5" step="0.5" inputmode="decimal">
-          </label>
-          <label class="field">
-            <span>目標日期</span>
-            <input type="date" data-target-date>
-          </label>
-          <label class="field">
-            <span>備註</span>
-            <textarea data-goal-notes rows="3" maxlength="500"></textarea>
-          </label>
+          <legend>{{ goal_parts[1] }}</legend><input type="hidden" data-goal-id>
+          <label class="field"><span>目前重量（kg）</span><input type="number" data-current-weight min="0" step="0.5" inputmode="decimal"></label>
+          <label class="field"><span>目標重量（kg）</span><input type="number" data-target-weight min="0.5" step="0.5" inputmode="decimal"></label>
+          <label class="field"><span>目標日期</span><input type="date" data-target-date></label>
+          <label class="field"><span>備註</span><textarea data-goal-notes rows="3" maxlength="500"></textarea></label>
         </fieldset>
       {% endfor %}
     </div>
-
     <div class="validation-summary" data-goal-validation role="alert" hidden></div>
     <p class="save-status" data-goal-status role="status" aria-live="polite"></p>
     <div class="form-actions">
       <button class="button primary" type="submit" data-save-goals>儲存訓練目標</button>
-      <a class="button button-link" href="{{ '/' | relative_url }}">返回 Dashboard</a>
+      <a class="button button-link" href="#/dashboard">返回 Dashboard</a>
     </div>
   </form>
 </section>

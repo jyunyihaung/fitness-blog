@@ -25,6 +25,20 @@ deployment history.
 * Google Sheets
 * GitHub Actions
 
+## Application routes
+
+The GitHub Pages site uses a client-side hash router so Dashboard, Add Record,
+and Goals share one in-memory Google OAuth session:
+
+```text
+/fitness-blog/#/dashboard
+/fitness-blog/#/record/new
+/fitness-blog/#/goals
+```
+
+The legacy `/record/` and `/goals/` URLs redirect to their hash routes. Access
+tokens remain memory-only and are discarded when the tab reloads or closes.
+
 ## Quick Start
 
 ``` shell

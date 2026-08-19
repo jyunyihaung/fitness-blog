@@ -49,6 +49,10 @@ html {
   scroll-behavior: smooth;
 }
 
+[data-route-page][hidden] {
+  display: none !important;
+}
+
 body {
   min-height: 100vh;
   margin: 0;
