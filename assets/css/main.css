@@ -336,7 +336,7 @@ code {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: var(--space-4);
 }
 
@@ -396,8 +396,8 @@ code {
 
 .set-fields {
   display: grid;
-  grid-template-columns: 1.25fr 1fr 1fr 1.25fr auto auto;
-  align-items: end;
+  grid-template-columns: 1fr;
+  align-items: stretch;
   gap: var(--space-3);
 }
 
@@ -651,16 +651,12 @@ code {
 
   .form-grid,
   .set-fields {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
   }
 
   .exercise-editor-header {
     align-items: stretch;
     flex-direction: column;
-  }
-
-  .set-fields .danger-button {
-    grid-column: 1 / -1;
   }
 
   .form-section-header {

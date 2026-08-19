@@ -14,8 +14,11 @@ export function validateWorkoutInput(input) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.trainingDate)) errors.push("請選擇有效的訓練日期。");
   if (!input.title.trim()) errors.push("請輸入訓練名稱。");
 
-  if (input.bodyWeightKg !== "" && (!isFiniteNumber(input.bodyWeightKg) || Number(input.bodyWeightKg) <= 0)) {
-    errors.push("體重必須是大於 0 的數字。");
+  if (!isFiniteNumber(input.defaultWeightKg) || Number(input.defaultWeightKg) < 0 || !isStep(input.defaultWeightKg, 0.5)) {
+    errors.push("重量必須大於或等於 0，並以 0.5 kg 為單位。");
+  }
+  if (!Number.isInteger(Number(input.defaultReps)) || Number(input.defaultReps) < 1) {
+    errors.push("次數必須是大於 0 的整數。");
   }
   if (input.durationMinutes !== "" && (!Number.isInteger(Number(input.durationMinutes)) || Number(input.durationMinutes) < 1)) {
     errors.push("訓練時間必須是大於 0 的整數。");
@@ -69,7 +72,7 @@ export function createWorkoutRecords(input) {
     ended_at: "",
     training_date: input.trainingDate,
     title: input.title.trim(),
-    body_weight_kg: input.bodyWeightKg,
+    body_weight_kg: "",
     duration_minutes: input.durationMinutes,
     notes: input.notes.trim(),
     created_at: now,

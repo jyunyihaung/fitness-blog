@@ -12,7 +12,7 @@
         {{ site.title | escape }}
       {%- endif -%}
     </title>
-    <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
+    <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}?v={{ site.time | date: '%s' }}">
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -35,6 +35,6 @@
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% endunless %}
     {% assign page_script = page.script | default: '/assets/js/main.js' %}
-    <script type="module" src="{{ page_script | relative_url }}"></script>
+    <script type="module" src="{{ page_script | relative_url }}?v={{ site.time | date: '%s' }}"></script>
   </body>
 </html>

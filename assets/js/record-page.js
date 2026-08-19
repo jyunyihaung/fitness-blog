@@ -27,7 +27,10 @@ function renumberEditors() {
 }
 
 function addSet(exercise) {
-  exercise.querySelector("[data-sets]").append(setTemplate.content.cloneNode(true));
+  const fragment = setTemplate.content.cloneNode(true);
+  fragment.querySelector("[data-set-weight]").value = form.elements.default_weight_kg.value;
+  fragment.querySelector("[data-set-reps]").value = form.elements.default_reps.value;
+  exercise.querySelector("[data-sets]").append(fragment);
   renumberEditors();
 }
 
@@ -45,7 +48,8 @@ function readInput() {
   return {
     trainingDate: String(data.get("training_date") ?? ""),
     title: String(data.get("title") ?? ""),
-    bodyWeightKg: String(data.get("body_weight_kg") ?? ""),
+    defaultWeightKg: String(data.get("default_weight_kg") ?? ""),
+    defaultReps: String(data.get("default_reps") ?? ""),
     durationMinutes: String(data.get("duration_minutes") ?? ""),
     notes: String(data.get("notes") ?? ""),
     exercises: Array.from(exercisesOutput.querySelectorAll("[data-exercise]")).map((exercise) => ({
@@ -121,6 +125,16 @@ function handleEditorClick(event) {
 
 async function initialize() {
   form.elements.training_date.value = localDateString();
+  form.elements.default_weight_kg.addEventListener("input", (event) => {
+    exercisesOutput.querySelectorAll("[data-set-weight]").forEach((input) => {
+      input.value = event.target.value;
+    });
+  });
+  form.elements.default_reps.addEventListener("input", (event) => {
+    exercisesOutput.querySelectorAll("[data-set-reps]").forEach((input) => {
+      input.value = event.target.value;
+    });
+  });
   document.querySelector("[data-add-exercise]").addEventListener("click", addExercise);
   exercisesOutput.addEventListener("click", handleEditorClick);
   addExercise();

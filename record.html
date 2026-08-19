@@ -18,7 +18,7 @@ hide_charts: true
   <form class="record-form" data-record-form data-dashboard-url="{{ '/' | relative_url }}" novalidate>
     <fieldset class="card form-section">
       <legend>訓練資訊</legend>
-      <div class="form-grid">
+      <div class="form-grid session-fields">
         <label class="field">
           <span>訓練日期 <span aria-hidden="true">*</span></span>
           <input type="date" name="training_date" required>
@@ -28,12 +28,16 @@ hide_charts: true
           <input type="text" name="title" required maxlength="120" autocomplete="off" placeholder="例如：深蹲訓練">
         </label>
         <label class="field">
-          <span>體重（kg）</span>
-          <input type="number" name="body_weight_kg" min="0.5" step="0.1" inputmode="decimal">
+          <span>重量（kg）</span>
+          <input type="number" name="default_weight_kg" min="0" step="0.5" inputmode="decimal" value="0">
+        </label>
+        <label class="field">
+          <span>次數</span>
+          <input type="number" name="default_reps" min="1" step="1" inputmode="numeric" value="1">
         </label>
         <label class="field">
           <span>訓練時間（分鐘）</span>
-          <input type="number" name="duration_minutes" min="1" step="1" inputmode="numeric">
+          <input type="number" name="duration_minutes" min="1" step="1" inputmode="numeric" value="5">
         </label>
         <label class="field field-wide">
           <span>備註</span>
