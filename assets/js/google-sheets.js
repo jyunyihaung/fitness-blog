@@ -151,6 +151,25 @@ function toAppendRow(headers, record) {
   };
 }
 
+export function buildWorkoutAppendRequests(sheetIds, sessionHeaders, setHeaders, record) {
+  return [
+    {
+      appendCells: {
+        sheetId: sheetIds.get("Sessions"),
+        rows: [toAppendRow(sessionHeaders, record.session)],
+        fields: "userEnteredValue",
+      },
+    },
+    {
+      appendCells: {
+        sheetId: sheetIds.get("Sets"),
+        rows: record.sets.map((set) => toAppendRow(setHeaders, set)),
+        fields: "userEnteredValue",
+      },
+    },
+  ];
+}
+
 export async function appendWorkoutRecord(spreadsheetId, accessToken, record) {
   const fields = encodeURIComponent("sheets.properties(sheetId,title)");
   const [metadata, valuesByRange] = await Promise.all([
@@ -170,22 +189,7 @@ export async function appendWorkoutRecord(spreadsheetId, accessToken, record) {
     if (missing.length > 0) throw new Error(`${title} is missing required columns: ${missing.join(", ")}.`);
   }
 
-  const requests = [
-    {
-      appendCells: {
-        sheetId: sheetIds.get("Sessions"),
-        rows: [toAppendRow(sessionHeaders, record.session)],
-        fields: "userEnteredValue",
-      },
-    },
-    {
-      appendCells: {
-        sheetId: sheetIds.get("Sets"),
-        rows: record.sets.map((set) => toAppendRow(setHeaders, set)),
-        fields: "userEnteredValue",
-      },
-    },
-  ];
+  const requests = buildWorkoutAppendRequests(sheetIds, sessionHeaders, setHeaders, record);
   await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
     method: "POST",
     body: JSON.stringify({ requests }),
@@ -212,9 +216,18 @@ export async function upsertGoals(spreadsheetId, accessToken, goals) {
     rowIndex: index + 1,
     record: Object.fromEntries(headers.map((header, columnIndex) => [header, String(values[columnIndex] ?? "").trim()])),
   }));
+  const requests = buildGoalUpsertRequests(sheetId, headers, existingRows, goals);
+  if (requests.length === 0) return;
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests }),
+  });
+}
+
+export function buildGoalUpsertRequests(sheetId, headers, existingRows, goals) {
   const byId = new Map(existingRows.filter((row) => row.record.goal_id).map((row) => [row.record.goal_id, row]));
   const byLift = new Map(existingRows.filter((row) => row.record.lift).map((row) => [row.record.lift, row]));
-  const requests = goals.map((goal) => {
+  return goals.map((goal) => {
     const existing = byId.get(goal.goal_id) ?? byLift.get(goal.lift);
     if (!existing) {
       return {
@@ -238,11 +251,6 @@ export async function upsertGoals(spreadsheetId, accessToken, goals) {
         fields: "userEnteredValue",
       },
     };
-  });
-  if (requests.length === 0) return;
-  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
-    method: "POST",
-    body: JSON.stringify({ requests }),
   });
 }
 

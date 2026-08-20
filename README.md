@@ -51,6 +51,20 @@ bundle exec jekyll serve
 
 ```
 
+## Tests
+
+The browser-independent domain and Google Sheets request builders are covered by
+Vitest. Use Node.js 20 or newer:
+
+```shell
+npm install
+npm test
+```
+
+The tests cover workout validation and record conversion, named-header workout
+mapping, statistics, Goals parsing/validation/progress, estimated 1RM, and
+Sessions/Sets/Goals batch request construction.
+
 ## Folder Structure
 
 * assets

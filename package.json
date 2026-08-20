@@ -1,0 +1,15 @@
+{
+  "name": "fitness-blog",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "vitest": "4.1.10"
+  }
+}

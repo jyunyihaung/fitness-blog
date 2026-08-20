@@ -37,4 +37,8 @@ exclude:
   - UI_GUIDELINES.md
   - Gemfile
   - Gemfile.lock
+  - package.json
+  - package-lock.json
+  - vitest.config.js
+  - tests
   - README.md

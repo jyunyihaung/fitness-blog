@@ -21,7 +21,8 @@ Deliverables: `ARCHITECTURE.md`, `DATA_MODEL.md`, and this milestone plan.
 
 Status: partially implemented in the Jekyll client. A hash router, single app
 shell, shared memory-only OAuth service, app state, and accessible route focus
-management are now present; Vite, TypeScript, ESLint, and Vitest remain pending.
+management are now present. Vitest and the first pure-module test suite are also
+configured; Vite, TypeScript, and ESLint remain pending.
 
 - Add Vite, strict TypeScript, ESLint, Vitest, and `.env.example`.
 - Add hash router, app shell, responsive navigation, style tokens, and accessible
@@ -53,6 +54,11 @@ invalid schema, network failure, and partial initialization have actionable UI
 states and neither credentials nor workout records are persisted locally.
 
 ## Phase 5 — Domain logic
+
+Status: in progress. Workout validation and conversion, named-header mapping,
+statistics, Goals validation/progress, estimated 1RM, and Sheets request builders
+now have automated tests. Exercise deduplication, broader edge cases, and full
+repository behavior remain pending.
 
 - Implement validation, volume, estimated 1RM, goal progress, grouping, exercise
   deduplication, and date sorting as pure functions.
