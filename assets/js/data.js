@@ -93,6 +93,7 @@ function groupExercises(sets) {
         rpe: set.rpe ? toNumber(set.rpe) : null,
         isWarmup: toBoolean(set.is_warmup),
         type: set.set_type || "working",
+        notes: set.notes || "",
       });
       exercises.set(name, exercise);
     });
