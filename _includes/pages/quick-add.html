@@ -15,6 +15,29 @@
   <section class="quick-add-step" aria-labelledby="quick-mode-title">
     <div class="step-heading"><span>2</span><h2 id="quick-mode-title">選擇訓練模式</h2></div>
     <div class="choice-card-grid mode-choice-grid" data-mode-choices></div>
+    <aside class="card training-guidance" data-training-guidance aria-labelledby="training-guidance-title" hidden>
+      <div class="training-guidance-header">
+        <div>
+          <p class="eyebrow">Training Mode Tips</p>
+          <h3 id="training-guidance-title" data-guidance-name></h3>
+        </div>
+        <p class="training-guidance-prescription" data-guidance-prescription></p>
+      </div>
+      <dl class="guidance-summary">
+        <div><dt>訓練目的</dt><dd data-guidance-goal></dd></div>
+        <div><dt>目標強度</dt><dd data-guidance-rpe></dd></div>
+        <div><dt>組間休息</dt><dd data-guidance-rest></dd></div>
+      </dl>
+      <div class="training-short-tip">
+        <strong>動作要點</strong>
+        <p>「<span data-guidance-short-tip></span>」</p>
+      </div>
+      <details class="training-guidance-details">
+        <summary>查看詳細提示</summary>
+        <ul data-guidance-tips></ul>
+      </details>
+      <p class="guidance-disclaimer">此提示用於協助當下判斷，不取代合格教練的個別指導或醫療建議。</p>
+    </aside>
   </section>
 
   <div class="card manual-one-rm" data-manual-one-rm hidden>
@@ -56,6 +79,7 @@
       <input type="number" data-quick-duration min="1" step="1" inputmode="numeric" value="5">
     </label>
     <div class="validation-summary" data-quick-save-error role="alert" hidden></div>
+    <div class="guidance-warning" data-training-warning role="status" hidden></div>
     <p class="save-status" data-quick-save-status role="status" aria-live="polite"></p>
     <button class="button primary quick-save-button" type="button" data-save-quick-workout>儲存訓練紀錄</button>
   </section>

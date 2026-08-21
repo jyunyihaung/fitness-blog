@@ -4,7 +4,7 @@ import { getWorkoutData } from "./data.js";
 import { parseGoals } from "./goals.js";
 import { appendWorkoutRecord, readRanges } from "./google-sheets.js";
 import { resolveReferenceOneRepMax } from "./one-rep-max.js";
-import { generateQuickAddDraft, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
+import { generateQuickAddDraft, getTrainingModeWarnings, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 
@@ -21,6 +21,8 @@ const saveButton = document.querySelector("[data-save-quick-workout]");
 const saveError = document.querySelector("[data-quick-save-error]");
 const saveStatus = document.querySelector("[data-quick-save-status]");
 const durationInput = document.querySelector("[data-quick-duration]");
+const guidance = document.querySelector("[data-training-guidance]");
+const warningOutput = document.querySelector("[data-training-warning]");
 const editor = createWorkoutEditor(quickExercises, { completionEnabled: true });
 
 let selectedLift = "";
@@ -76,8 +78,43 @@ function selectChoice(button) {
     choice.setAttribute("aria-pressed", String(choice === button));
   });
   if (group === "lift") selectedLift = button.dataset.choiceId;
-  else selectedMode = button.dataset.choiceId;
+  else {
+    selectedMode = button.dataset.choiceId;
+    renderTrainingGuidance(TRAINING_MODES[selectedMode]);
+  }
   preview.hidden = true;
+}
+
+function rpeLabel(mode) {
+  return mode.rpeRange[0] === 0 ? `RPE ≤ ${mode.rpeRange[1]}` : `RPE ${mode.rpeRange.join("–")}`;
+}
+
+function renderTrainingGuidance(mode) {
+  document.querySelector("[data-guidance-name]").textContent = `${mode.englishLabel} / ${mode.label}`;
+  document.querySelector("[data-guidance-prescription]").textContent = `${mode.preset.intensity * 100}% 1RM · ${mode.preset.reps} reps · ${mode.preset.sets} sets`;
+  document.querySelector("[data-guidance-goal]").textContent = mode.goal;
+  document.querySelector("[data-guidance-rpe]").textContent = rpeLabel(mode);
+  document.querySelector("[data-guidance-rest]").textContent = mode.rest;
+  document.querySelector("[data-guidance-short-tip]").textContent = mode.shortTip;
+  const tips = document.querySelector("[data-guidance-tips]");
+  tips.replaceChildren(...mode.tips.map((tip) => {
+    const item = document.createElement("li");
+    item.textContent = tip;
+    return item;
+  }));
+  guidance.querySelector("details").open = false;
+  guidance.hidden = false;
+}
+
+function updateTrainingWarning() {
+  if (!generatedDraft) return;
+  const warnings = getTrainingModeWarnings(
+    generatedDraft.quickAdd.modeId,
+    editor.read(),
+    generatedDraft.quickAdd.referenceOneRepMax,
+  );
+  warningOutput.textContent = warnings.join(" ");
+  warningOutput.hidden = warnings.length === 0;
 }
 
 function showError(message) {
@@ -112,6 +149,7 @@ function renderPreview(draft, reference) {
   document.querySelector("[data-preview-preset]").textContent = `${mode.preset.intensity * 100}% 1RM`;
   document.querySelector("[data-preview-workout]").textContent = `${draft.quickAdd.weight} kg × ${mode.preset.reps} reps × ${mode.preset.sets} sets`;
   editor.load(draft.exercises);
+  updateTrainingWarning();
   durationInput.value = draft.durationMinutes || "5";
   saveError.hidden = true;
   saveStatus.textContent = "請勾選已完成的組數，只有完成的組數會被儲存。";
@@ -232,6 +270,9 @@ document.querySelector("[data-quick-add-exercise]").addEventListener("click", ()
   exercise.querySelector("[data-exercise-name]").focus();
 });
 saveButton.addEventListener("click", saveWorkout);
+quickExercises.addEventListener("input", updateTrainingWarning);
+quickExercises.addEventListener("change", updateTrainingWarning);
+quickExercises.addEventListener("click", () => queueMicrotask(updateTrainingWarning));
 window.addEventListener("fitness:state-change", (event) => {
   if (event.detail.key === "selectedSpreadsheet") updateConnection();
 });

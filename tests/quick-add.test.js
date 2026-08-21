@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveReferenceOneRepMax } from "../assets/js/one-rep-max.js";
-import { generateQuickAddDraft, roundWeight } from "../assets/js/quick-add.js";
+import { generateQuickAddDraft, getTrainingModeWarnings, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "../assets/js/record-validation.js";
 
 function generate(modeId, referenceOneRepMax = 100) {
@@ -17,6 +17,15 @@ function workoutSet({ category = "squat", weight, reps, isWarmup = false, type =
 }
 
 describe("Quick Add prescription generation", () => {
+  it("keeps complete guidance content in every training mode config", () => {
+    Object.values(TRAINING_MODES).forEach((mode) => {
+      expect(mode.goal).toBeTruthy();
+      expect(mode.rest).toBeTruthy();
+      expect(mode.shortTip).toBeTruthy();
+      expect(mode.tips.length).toBeGreaterThan(0);
+    });
+  });
+
   it("calculates 100 kg × 85% as 85 kg", () => {
     expect(generate("strength").quickAdd.weight).toBe(85);
   });
@@ -48,6 +57,15 @@ describe("Quick Add prescription generation", () => {
   it("rejects missing or invalid reference 1RM safely", () => {
     expect(resolveReferenceOneRepMax({ lift: "squat" })).toBeNull();
     expect(() => generate("strength", 0)).toThrow("大於 0");
+  });
+
+  it("returns guidance without blocking a workout that diverges from its mode", () => {
+    const strength = generate("strength");
+    strength.exercises[0].sets[0].reps = "12";
+    expect(getTrainingModeWarnings("strength", strength.exercises, 100)).toEqual([
+      "目前次數較高，訓練刺激可能逐漸偏向肌肥大或肌耐力。",
+    ]);
+    expect(validateWorkoutInput(strength)).toEqual([]);
   });
 });
 
