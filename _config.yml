@@ -31,6 +31,8 @@ navigation:
     url: /#/record/new
   - label: 快速新增
     url: /#/quick-add
+  - label: 紀錄列表
+    url: /#/records
   - label: 訓練目標
     url: /#/goals
 
