@@ -4,18 +4,6 @@ export const QUICK_ADD_LIFTS = {
   deadlift: { id: "deadlift", name: "Deadlift", label: "硬舉" },
 };
 
-export const RPE_FEEL_SCALE = [
-  { rpe: "10", rir: "0", feeling: "完全力竭", description: "已經不可能再完成 1 下；最後一下可能非常慢" },
-  { rpe: "9.5", rir: "0～1", feeling: "幾乎極限", description: "應該做不了完整下一下，但可能還能增加一點重量" },
-  { rpe: "9", rir: "1", feeling: "非常吃力", description: "很確定還能再做 1 下，但第 2 下大概不行" },
-  { rpe: "8.5", rir: "1～2", feeling: "很重", description: "還能再做 1 下，第 2 下不確定" },
-  { rpe: "8", rir: "2", feeling: "有挑戰但可控", description: "很確定還能再完成約 2 下" },
-  { rpe: "7.5", rir: "2～3", feeling: "中等偏重", description: "還有一些餘裕，第 3 下不確定" },
-  { rpe: "7", rir: "3", feeling: "適中", description: "大約還能再做 3 下，動作仍穩定" },
-  { rpe: "6", rir: "4+", feeling: "輕鬆", description: "明顯還能繼續做，幾乎沒有接近力竭" },
-  { rpe: "≤5", rir: "很多", feeling: "很輕鬆", description: "熱身感，疲勞很低" },
-];
-
 export const TRAINING_MODES = {
   strength: {
     id: "strength", label: "最大肌力", englishLabel: "Strength",

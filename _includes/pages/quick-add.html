@@ -33,7 +33,11 @@
         <div class="table-scroll" tabindex="0" aria-label="RPE 感覺對照表，可水平捲動">
           <table>
             <thead><tr><th scope="col">RPE</th><th scope="col">約略 RIR</th><th scope="col">具體體感</th><th scope="col">實際感覺</th></tr></thead>
-            <tbody data-rpe-scale></tbody>
+            <tbody>
+              {% for level in site.data.rpe_scale %}
+                <tr><th scope="row">{{ level.rpe }}</th><td>{{ level.rir }}</td><td>{{ level.feeling }}</td><td>{{ level.description }}</td></tr>
+              {% endfor %}
+            </tbody>
           </table>
         </div>
       </details>

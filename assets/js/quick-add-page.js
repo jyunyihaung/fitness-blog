@@ -4,7 +4,7 @@ import { getWorkoutData } from "./data.js";
 import { parseGoals } from "./goals.js";
 import { appendWorkoutRecord, readRanges } from "./google-sheets.js";
 import { resolveReferenceOneRepMax } from "./one-rep-max.js";
-import { generateQuickAddDraft, getTrainingModeWarnings, QUICK_ADD_LIFTS, RPE_FEEL_SCALE, TRAINING_MODES } from "./quick-add.js";
+import { generateQuickAddDraft, getTrainingModeWarnings, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 
@@ -69,20 +69,6 @@ function renderChoices() {
       subtitle: `${mode.label} · ${preset.intensity * 100}% · ${preset.reps} reps · ${preset.sets} sets`,
       group: "mode",
     }));
-  });
-}
-
-function renderRpeScale() {
-  const output = document.querySelector("[data-rpe-scale]");
-  RPE_FEEL_SCALE.forEach((level) => {
-    const row = document.createElement("tr");
-    [level.rpe, level.rir, level.feeling, level.description].forEach((value, index) => {
-      const cell = document.createElement(index === 0 ? "th" : "td");
-      if (index === 0) cell.scope = "row";
-      cell.textContent = value;
-      row.append(cell);
-    });
-    output.append(row);
   });
 }
 
@@ -274,7 +260,6 @@ function updateConnection() {
 }
 
 renderChoices();
-renderRpeScale();
 document.querySelector("[data-route-page='/quick-add']").addEventListener("click", (event) => {
   const choice = event.target.closest("[data-choice-id]");
   if (choice) selectChoice(choice);
