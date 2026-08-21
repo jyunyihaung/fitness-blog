@@ -1,0 +1,144 @@
+.records-page {
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+.records-status,
+.records-list {
+  margin-top: var(--space-5);
+}
+
+.records-status[data-state="error"],
+.records-status[data-state="authorization-error"] {
+  border-color: var(--color-focus);
+}
+
+.records-list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.record-session {
+  padding: 0;
+  overflow: hidden;
+}
+
+.record-session-summary {
+  display: flex;
+  min-height: 5rem;
+  padding: var(--space-4) var(--space-5);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.record-session-summary > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.record-session-date,
+.record-session-count,
+.record-set-meta,
+.record-set-notes,
+.record-session-notes {
+  color: var(--color-muted);
+}
+
+.record-session-title {
+  font-size: 1.125rem;
+}
+
+.record-session-body {
+  display: grid;
+  padding: 0 var(--space-5) var(--space-5);
+  gap: var(--space-4);
+}
+
+.record-session-notes {
+  margin: 0;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.record-exercise {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.record-exercise-title {
+  margin-bottom: var(--space-3);
+}
+
+.record-set-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  gap: var(--space-2);
+  list-style: none;
+}
+
+.record-set {
+  display: grid;
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  grid-template-columns: 4rem minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.record-set-number {
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.record-set-primary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-3);
+}
+
+.record-set-meta {
+  font-size: 0.875rem;
+}
+
+.record-set-notes {
+  margin: var(--space-2) 0 0;
+  grid-column: 2;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 42rem) {
+  .record-session-summary {
+    min-height: 4.5rem;
+    padding: var(--space-4);
+    align-items: flex-start;
+  }
+
+  .record-session-count {
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  .record-session-body {
+    padding: 0 var(--space-4) var(--space-4);
+  }
+
+  .record-set {
+    grid-template-columns: 1fr;
+  }
+
+  .record-set-number,
+  .record-set-notes {
+    grid-column: 1;
+  }
+
+  .record-set-primary {
+    justify-content: space-between;
+  }
+}
