@@ -2,11 +2,10 @@ import { appendWorkoutRecord } from "./google-sheets.js";
 import { googleAuth } from "./auth-service.js";
 import { appState } from "./app-state.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
+import { createWorkoutEditor } from "./workout-editor.js";
 
 const form = document.querySelector("[data-record-form]");
 const exercisesOutput = document.querySelector("[data-exercises]");
-const exerciseTemplate = document.querySelector("[data-exercise-template]");
-const setTemplate = document.querySelector("[data-set-template]");
 const validationSummary = document.querySelector("[data-validation-summary]");
 const saveStatus = document.querySelector("[data-save-status]");
 const saveButton = document.querySelector("[data-save-record]");
@@ -17,66 +16,14 @@ function localDateString() {
   return new Date(now.getTime() - offset).toISOString().slice(0, 10);
 }
 
-function renumberEditors() {
-  exercisesOutput.querySelectorAll("[data-exercise]").forEach((exercise, exerciseIndex) => {
-    exercise.querySelector("[data-exercise-number]").textContent = String(exerciseIndex + 1);
-    exercise.querySelectorAll("[data-set]").forEach((set, setIndex) => {
-      set.querySelector("[data-set-number]").textContent = String(setIndex + 1);
-    });
-  });
-}
-
-function writeSetValues(set, values) {
-  set.querySelector("[data-set-weight]").value = values.weightKg ?? "0";
-  set.querySelector("[data-set-reps]").value = values.reps ?? "1";
-  set.querySelector("[data-set-rpe]").value = values.rpe ?? "";
-  set.querySelector("[data-set-type]").value = values.type ?? "working";
-  set.querySelector("[data-set-warmup]").checked = Boolean(values.isWarmup);
-  set.querySelector("[data-set-notes]").value = values.notes ?? "";
-}
-
-function readSetValues(set) {
-  return {
-    weightKg: set.querySelector("[data-set-weight]").value,
-    reps: set.querySelector("[data-set-reps]").value,
-    rpe: set.querySelector("[data-set-rpe]").value,
-    type: set.querySelector("[data-set-type]").value,
-    isWarmup: set.querySelector("[data-set-warmup]").checked,
-    notes: set.querySelector("[data-set-notes]").value,
-  };
-}
-
-function addSet(exercise, values = null) {
-  const previousSet = exercise.querySelector("[data-set]:last-child");
-  const fragment = setTemplate.content.cloneNode(true);
-  const nextSet = fragment.querySelector("[data-set]");
-  if (values) writeSetValues(nextSet, values);
-  else if (previousSet) writeSetValues(nextSet, readSetValues(previousSet));
-  exercise.querySelector("[data-sets]").append(fragment);
-  renumberEditors();
-}
-
-function addExercise(values = null) {
-  const fragment = exerciseTemplate.content.cloneNode(true);
-  const exercise = fragment.querySelector("[data-exercise]");
-  if (values) {
-    exercise.querySelector("[data-exercise-name]").value = values.name ?? "";
-    exercise.querySelector("[data-exercise-category]").value = values.category ?? "accessory";
-    (values.sets ?? []).forEach((set) => addSet(exercise, set));
-  } else addSet(exercise);
-  exercisesOutput.append(fragment);
-  renumberEditors();
-  return exercise;
-}
+const editor = createWorkoutEditor(exercisesOutput);
 
 function populateDraft(draft) {
   if (!draft) return;
   form.elements.training_date.value = draft.trainingDate || localDateString();
   form.elements.title.value = draft.title ?? "";
   form.elements.duration_minutes.value = draft.durationMinutes ?? "5";
-  exercisesOutput.replaceChildren();
-  (draft.exercises ?? []).forEach((exercise) => addExercise(exercise));
-  if (!exercisesOutput.firstElementChild) addExercise();
+  editor.load(draft.exercises ?? []);
   showValidation([]);
   setStatus("快速新增建議已載入，你可以修改後儲存。", "success");
 }
@@ -87,11 +34,7 @@ function readInput() {
     trainingDate: String(data.get("training_date") ?? ""),
     title: String(data.get("title") ?? ""),
     durationMinutes: String(data.get("duration_minutes") ?? ""),
-    exercises: Array.from(exercisesOutput.querySelectorAll("[data-exercise]")).map((exercise) => ({
-      name: exercise.querySelector("[data-exercise-name]").value,
-      category: exercise.querySelector("[data-exercise-category]").value,
-      sets: Array.from(exercise.querySelectorAll("[data-set]")).map(readSetValues),
-    })),
+    exercises: editor.read(),
   };
 }
 
@@ -133,33 +76,13 @@ function describeError(error) {
   return error?.message || "無法儲存訓練紀錄，請稍後重試。";
 }
 
-function handleEditorClick(event) {
-  const addSetButton = event.target.closest("[data-add-set]");
-  if (addSetButton) {
-    addSet(addSetButton.closest("[data-exercise]"));
-    return;
-  }
-  const removeSetButton = event.target.closest("[data-remove-set]");
-  if (removeSetButton) {
-    removeSetButton.closest("[data-set]").remove();
-    renumberEditors();
-    return;
-  }
-  const removeExerciseButton = event.target.closest("[data-remove-exercise]");
-  if (removeExerciseButton) {
-    removeExerciseButton.closest("[data-exercise]").remove();
-    renumberEditors();
-  }
-}
-
 async function initialize() {
   form.elements.training_date.value = localDateString();
   document.querySelector("[data-add-exercise]").addEventListener("click", () => {
-    const exercise = addExercise();
+    const exercise = editor.addExercise();
     exercise.querySelector("[data-exercise-name]").focus();
   });
-  exercisesOutput.addEventListener("click", handleEditorClick);
-  addExercise();
+  editor.load();
   populateDraft(appState.get("recordDraft"));
 
   let selectedSpreadsheet = appState.get("selectedSpreadsheet");

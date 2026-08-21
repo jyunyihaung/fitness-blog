@@ -2,9 +2,11 @@ import { appState } from "./app-state.js";
 import { googleAuth } from "./auth-service.js";
 import { getWorkoutData } from "./data.js";
 import { parseGoals } from "./goals.js";
-import { readRanges } from "./google-sheets.js";
+import { appendWorkoutRecord, readRanges } from "./google-sheets.js";
 import { resolveReferenceOneRepMax } from "./one-rep-max.js";
 import { generateQuickAddDraft, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
+import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
+import { createWorkoutEditor } from "./workout-editor.js";
 
 const liftOutput = document.querySelector("[data-lift-choices]");
 const modeOutput = document.querySelector("[data-mode-choices]");
@@ -13,8 +15,12 @@ const manualPanel = document.querySelector("[data-manual-one-rm]");
 const manualInput = document.querySelector("[data-reference-one-rm]");
 const errorOutput = document.querySelector("[data-quick-error]");
 const preview = document.querySelector("[data-workout-preview]");
-const editButton = document.querySelector("[data-edit-workout]");
 const connectionOutput = document.querySelector("[data-quick-connection]");
+const quickExercises = document.querySelector("[data-quick-exercises]");
+const saveButton = document.querySelector("[data-save-quick-workout]");
+const saveError = document.querySelector("[data-quick-save-error]");
+const saveStatus = document.querySelector("[data-quick-save-status]");
+const editor = createWorkoutEditor(quickExercises, { completionEnabled: true });
 
 let selectedLift = "";
 let selectedMode = "";
@@ -104,8 +110,61 @@ function renderPreview(draft, reference) {
   document.querySelector("[data-preview-mode]").textContent = `${mode.englishLabel} / ${mode.label}`;
   document.querySelector("[data-preview-preset]").textContent = `${mode.preset.intensity * 100}% 1RM`;
   document.querySelector("[data-preview-workout]").textContent = `${draft.quickAdd.weight} kg × ${mode.preset.reps} reps × ${mode.preset.sets} sets`;
+  editor.load(draft.exercises);
+  saveError.hidden = true;
+  saveStatus.textContent = "請勾選已完成的組數，只有完成的組數會被儲存。";
   preview.hidden = false;
   preview.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function showSaveErrors(errors) {
+  saveError.replaceChildren();
+  if (!errors.length) {
+    saveError.hidden = true;
+    return;
+  }
+  const list = document.createElement("ul");
+  errors.forEach((message) => {
+    const item = document.createElement("li");
+    item.textContent = message;
+    list.append(item);
+  });
+  saveError.append(list);
+  saveError.hidden = false;
+}
+
+async function saveWorkout() {
+  const spreadsheet = appState.get("selectedSpreadsheet");
+  if (!spreadsheet?.id) return showSaveErrors(["尚未選擇 Google Sheet，請先回到 Dashboard 完成連線。"]);
+  if (!generatedDraft) return showSaveErrors(["請先產生訓練建議。"]);
+  const completedExercises = editor.read({ completedOnly: true });
+  if (!completedExercises.length) return showSaveErrors(["請至少勾選一組已完成的訓練內容。"]);
+  const input = { ...generatedDraft, exercises: completedExercises };
+  const errors = validateWorkoutInput(input);
+  showSaveErrors(errors);
+  if (errors.length) return;
+
+  saveButton.disabled = true;
+  saveStatus.textContent = "正在要求 Google 授權…";
+  try {
+    const accessToken = await googleAuth.getAccessToken();
+    saveStatus.textContent = "正在寫入 Google Sheet…";
+    await appendWorkoutRecord(spreadsheet.id, accessToken, createWorkoutRecords(input));
+    window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "quick-add" } }));
+    saveStatus.textContent = "訓練紀錄已儲存，正在返回 Dashboard。";
+    window.location.hash = "/dashboard";
+  } catch (error) {
+    console.error("Unable to save Quick Add workout.", error);
+    const message = error?.name === "AbortError"
+      ? "授權已取消，訓練內容仍保留。"
+      : error?.status === 403
+        ? "目前 Google 帳號沒有寫入這份試算表的權限。"
+        : error?.message || "無法儲存訓練紀錄，請稍後重試。";
+    showSaveErrors([message]);
+    saveStatus.textContent = "";
+  } finally {
+    saveButton.disabled = false;
+  }
 }
 
 async function generateWorkout() {
@@ -162,11 +221,11 @@ document.querySelector("[data-route-page='/quick-add']").addEventListener("click
   if (choice) selectChoice(choice);
 });
 generateButton.addEventListener("click", generateWorkout);
-editButton.addEventListener("click", () => {
-  if (!generatedDraft) return;
-  appState.set("recordDraft", generatedDraft);
-  window.location.hash = "/record/new";
+document.querySelector("[data-quick-add-exercise]").addEventListener("click", () => {
+  const exercise = editor.addExercise();
+  exercise.querySelector("[data-exercise-name]").focus();
 });
+saveButton.addEventListener("click", saveWorkout);
 window.addEventListener("fitness:state-change", (event) => {
   if (event.detail.key === "selectedSpreadsheet") updateConnection();
 });

@@ -41,6 +41,18 @@
       <div><dt>預設</dt><dd data-preview-preset></dd></div>
       <div><dt>建議內容</dt><dd data-preview-workout></dd></div>
     </dl>
-    <button class="button primary" type="button" data-edit-workout>編輯並儲存</button>
+    <section class="form-section" aria-labelledby="quick-exercises-title">
+      <div class="form-section-header">
+        <div>
+          <p class="eyebrow">Exercises</p>
+          <h2 id="quick-exercises-title">訓練動作</h2>
+        </div>
+        <button class="button" type="button" data-quick-add-exercise>＋ 新增動作</button>
+      </div>
+      <div class="exercise-editor-list" data-quick-exercises></div>
+    </section>
+    <div class="validation-summary" data-quick-save-error role="alert" hidden></div>
+    <p class="save-status" data-quick-save-status role="status" aria-live="polite"></p>
+    <button class="button primary quick-save-button" type="button" data-save-quick-workout>儲存訓練紀錄</button>
   </section>
 </section>
