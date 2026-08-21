@@ -71,7 +71,9 @@ Add Record form, validation, OAuth-on-save, and batched Sessions/Sets append;
 Goals can now be loaded and updated for squat, bench press, and deadlift, with
 progress and estimated 1RM cards on the Dashboard. Quick Add now generates an
 editable Add Record draft from the three competition lifts, six centralized
-training modes, and a resolved or manually entered reference 1RM. Record
+training modes, and a resolved or manually entered reference 1RM. Its inline
+editor shares the Add Record exercise/set component and saves only sets marked
+completed through the existing Sessions/Sets pipeline. Record
 editing, deletion, goal deletion, and typed migration remain pending.
 
 - Welcome/setup flow implementing the two-button requirements and acceptance

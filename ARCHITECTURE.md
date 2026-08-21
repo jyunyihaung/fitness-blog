@@ -14,8 +14,11 @@ migration should preserve these runtime and security boundaries.
 Quick Add is a draft producer in the business-logic layer. It resolves a
 reference 1RM from Goals and workout history, applies a centralized training
 mode prescription, and passes the resulting draft to the existing Add Record
-editor. Validation, Sessions/Sets conversion, and Google Sheets writes remain a
-single shared pipeline.
+editor component. Add Record and Quick Add instantiate the same exercise/set
+editor; Quick Add additionally filters the draft to sets the user marked as
+completed. Validation, Sessions/Sets conversion, and Google Sheets writes remain
+a single shared pipeline. Completion is transient UI state and does not change
+the Sheets schema.
 
 The product specification supersedes the original "Git is the database"
 assumption for training records. Google Sheets is the source of truth. Git
