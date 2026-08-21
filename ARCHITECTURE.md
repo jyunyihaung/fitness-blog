@@ -20,6 +20,12 @@ completed. Validation, Sessions/Sets conversion, and Google Sheets writes remain
 a single shared pipeline. Completion is transient UI state and does not change
 the Sheets schema.
 
+Training-mode guidance belongs to the training mode configuration, independently
+of lift-specific technique guidance. The UI renders the selected mode's goal,
+RPE range, rest interval, short tip, expandable details, and optional non-blocking
+divergence rule. Future squat, bench press, and deadlift technique cues can be
+added as a separate data source without changing training mode definitions.
+
 The product specification supersedes the original "Git is the database"
 assumption for training records. Google Sheets is the source of truth. Git
 continues to hold application source, documentation, and deployment history.
