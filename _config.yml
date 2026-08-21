@@ -6,6 +6,9 @@ baseurl: "/fitness-blog"
 lang: en
 timezone: UTC
 
+google_analytics:
+  measurement_id: "G-J3VCKK0N2Y"
+
 # Share the spreadsheet as "Anyone with the link can view". It must contain
 # Sessions and Sets sheets matching DATA_MODEL.md.
 google_sheets:

@@ -5,6 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="referrer" content="no-referrer-when-downgrade">
     <meta name="description" content="{{ site.description | escape }}">
+    {% if site.google_analytics.measurement_id %}
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ site.google_analytics.measurement_id }}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', '{{ site.google_analytics.measurement_id }}');
+    </script>
+    {% endif %}
     <title>
       {%- if page.title -%}
         {{ page.title | escape }} | {{ site.title | escape }}
