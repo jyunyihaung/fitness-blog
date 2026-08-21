@@ -20,6 +20,7 @@ const quickExercises = document.querySelector("[data-quick-exercises]");
 const saveButton = document.querySelector("[data-save-quick-workout]");
 const saveError = document.querySelector("[data-quick-save-error]");
 const saveStatus = document.querySelector("[data-quick-save-status]");
+const durationInput = document.querySelector("[data-quick-duration]");
 const editor = createWorkoutEditor(quickExercises, { completionEnabled: true });
 
 let selectedLift = "";
@@ -111,6 +112,7 @@ function renderPreview(draft, reference) {
   document.querySelector("[data-preview-preset]").textContent = `${mode.preset.intensity * 100}% 1RM`;
   document.querySelector("[data-preview-workout]").textContent = `${draft.quickAdd.weight} kg × ${mode.preset.reps} reps × ${mode.preset.sets} sets`;
   editor.load(draft.exercises);
+  durationInput.value = draft.durationMinutes || "5";
   saveError.hidden = true;
   saveStatus.textContent = "請勾選已完成的組數，只有完成的組數會被儲存。";
   preview.hidden = false;
@@ -139,7 +141,11 @@ async function saveWorkout() {
   if (!generatedDraft) return showSaveErrors(["請先產生訓練建議。"]);
   const completedExercises = editor.read({ completedOnly: true });
   if (!completedExercises.length) return showSaveErrors(["請至少勾選一組已完成的訓練內容。"]);
-  const input = { ...generatedDraft, exercises: completedExercises };
+  const input = {
+    ...generatedDraft,
+    durationMinutes: durationInput.value,
+    exercises: completedExercises,
+  };
   const errors = validateWorkoutInput(input);
   showSaveErrors(errors);
   if (errors.length) return;
