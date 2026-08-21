@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveReferenceOneRepMax } from "../assets/js/one-rep-max.js";
-import { generateQuickAddDraft, getTrainingModeWarnings, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
+import { generateQuickAddDraft, getTrainingModeWarnings, roundWeight, RPE_FEEL_SCALE, TRAINING_MODES } from "../assets/js/quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "../assets/js/record-validation.js";
 
 function generate(modeId, referenceOneRepMax = 100) {
@@ -24,6 +24,12 @@ describe("Quick Add prescription generation", () => {
       expect(mode.shortTip).toBeTruthy();
       expect(mode.tips.length).toBeGreaterThan(0);
     });
+  });
+
+  it("provides the shared RPE feeling scale from 10 through 5 or lower", () => {
+    expect(RPE_FEEL_SCALE).toHaveLength(9);
+    expect(RPE_FEEL_SCALE[0]).toMatchObject({ rpe: "10", rir: "0", feeling: "完全力竭" });
+    expect(RPE_FEEL_SCALE.at(-1)).toMatchObject({ rpe: "≤5", feeling: "很輕鬆" });
   });
 
   it("calculates 100 kg × 85% as 85 kg", () => {
