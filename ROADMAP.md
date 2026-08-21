@@ -69,8 +69,10 @@ repository behavior remain pending.
 Status: in progress. The Jekyll client now includes the first mobile-friendly
 Add Record form, validation, OAuth-on-save, and batched Sessions/Sets append;
 Goals can now be loaded and updated for squat, bench press, and deadlift, with
-progress and estimated 1RM cards on the Dashboard. Record editing, deletion,
-goal deletion, typed migration, and automated tests remain pending.
+progress and estimated 1RM cards on the Dashboard. Quick Add now generates an
+editable Add Record draft from the three competition lifts, six centralized
+training modes, and a resolved or manually entered reference 1RM. Record
+editing, deletion, goal deletion, and typed migration remain pending.
 
 - Welcome/setup flow implementing the two-button requirements and acceptance
   criteria in `ARCHITECTURE.md`.

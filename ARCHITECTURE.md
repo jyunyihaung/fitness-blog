@@ -7,9 +7,15 @@ Tracker. The current Jekyll application remains deployable while the Vite and
 TypeScript client is introduced incrementally.
 
 The current Jekyll client now uses a single app shell and hash router for
-Dashboard, Add Record, and Goals. These routes share one memory-only
+Dashboard, Add Record, Quick Add, and Goals. These routes share one memory-only
 `GoogleAuthService` instance and application state. The later Vite/TypeScript
 migration should preserve these runtime and security boundaries.
+
+Quick Add is a draft producer in the business-logic layer. It resolves a
+reference 1RM from Goals and workout history, applies a centralized training
+mode prescription, and passes the resulting draft to the existing Add Record
+editor. Validation, Sessions/Sets conversion, and Google Sheets writes remain a
+single shared pipeline.
 
 The product specification supersedes the original "Git is the database"
 assumption for training records. Google Sheets is the source of truth. Git

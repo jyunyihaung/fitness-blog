@@ -9,6 +9,7 @@ deployment history.
 
 * Workout Log
 * Add workout records from desktop or mobile
+* Generate editable workouts from a lift, training mode, and reference 1RM
 * Squat, bench press, and deadlift goals
 * Body Weight
 * Personal Records
@@ -28,11 +29,12 @@ deployment history.
 ## Application routes
 
 The GitHub Pages site uses a client-side hash router so Dashboard, Add Record,
-and Goals share one in-memory Google OAuth session:
+Quick Add, and Goals share one in-memory Google OAuth session:
 
 ```text
 /fitness-blog/#/dashboard
 /fitness-blog/#/record/new
+/fitness-blog/#/quick-add
 /fitness-blog/#/goals
 ```
 
@@ -61,9 +63,9 @@ npm install
 npm test
 ```
 
-The tests cover workout validation and record conversion, named-header workout
-mapping, statistics, Goals parsing/validation/progress, estimated 1RM, and
-Sessions/Sets/Goals batch request construction.
+The tests cover workout validation and record conversion, Quick Add prescriptions
+and reference 1RM resolution, named-header workout mapping, statistics, Goals
+parsing/validation/progress, and Sessions/Sets/Goals batch request construction.
 
 ## Folder Structure
 
