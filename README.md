@@ -140,3 +140,7 @@ the stored current weight.
 * Garmin
 * Apple Health
 * AI Coach
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
