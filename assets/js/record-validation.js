@@ -84,7 +84,7 @@ export function createWorkoutRecords(input) {
     rpe: set.rpe === "" ? "" : String(Number(set.rpe)),
     is_warmup: String(set.isWarmup || set.type === "warmup"),
     set_type: set.type,
-    notes: "",
+    notes: String(set.notes ?? "").trim(),
     created_at: now,
     updated_at: now,
   })));

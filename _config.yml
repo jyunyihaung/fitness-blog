@@ -26,6 +26,8 @@ navigation:
     url: /#/dashboard
   - label: 新增紀錄
     url: /#/record/new
+  - label: 快速新增
+    url: /#/quick-add
   - label: 訓練目標
     url: /#/goals
 

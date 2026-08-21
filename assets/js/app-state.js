@@ -5,6 +5,7 @@ const state = {
   workouts: [],
   goals: [],
   statistics: null,
+  recordDraft: null,
 };
 
 export const appState = {

@@ -26,28 +26,59 @@ function renumberEditors() {
   });
 }
 
-function addSet(exercise) {
+function writeSetValues(set, values) {
+  set.querySelector("[data-set-weight]").value = values.weightKg ?? "0";
+  set.querySelector("[data-set-reps]").value = values.reps ?? "1";
+  set.querySelector("[data-set-rpe]").value = values.rpe ?? "";
+  set.querySelector("[data-set-type]").value = values.type ?? "working";
+  set.querySelector("[data-set-warmup]").checked = Boolean(values.isWarmup);
+  set.querySelector("[data-set-notes]").value = values.notes ?? "";
+}
+
+function readSetValues(set) {
+  return {
+    weightKg: set.querySelector("[data-set-weight]").value,
+    reps: set.querySelector("[data-set-reps]").value,
+    rpe: set.querySelector("[data-set-rpe]").value,
+    type: set.querySelector("[data-set-type]").value,
+    isWarmup: set.querySelector("[data-set-warmup]").checked,
+    notes: set.querySelector("[data-set-notes]").value,
+  };
+}
+
+function addSet(exercise, values = null) {
   const previousSet = exercise.querySelector("[data-set]:last-child");
   const fragment = setTemplate.content.cloneNode(true);
   const nextSet = fragment.querySelector("[data-set]");
-  if (previousSet) {
-    nextSet.querySelector("[data-set-weight]").value = previousSet.querySelector("[data-set-weight]").value;
-    nextSet.querySelector("[data-set-reps]").value = previousSet.querySelector("[data-set-reps]").value;
-    nextSet.querySelector("[data-set-rpe]").value = previousSet.querySelector("[data-set-rpe]").value;
-    nextSet.querySelector("[data-set-type]").value = previousSet.querySelector("[data-set-type]").value;
-    nextSet.querySelector("[data-set-warmup]").checked = previousSet.querySelector("[data-set-warmup]").checked;
-  }
+  if (values) writeSetValues(nextSet, values);
+  else if (previousSet) writeSetValues(nextSet, readSetValues(previousSet));
   exercise.querySelector("[data-sets]").append(fragment);
   renumberEditors();
 }
 
-function addExercise() {
+function addExercise(values = null) {
   const fragment = exerciseTemplate.content.cloneNode(true);
   const exercise = fragment.querySelector("[data-exercise]");
-  addSet(exercise);
+  if (values) {
+    exercise.querySelector("[data-exercise-name]").value = values.name ?? "";
+    exercise.querySelector("[data-exercise-category]").value = values.category ?? "accessory";
+    (values.sets ?? []).forEach((set) => addSet(exercise, set));
+  } else addSet(exercise);
   exercisesOutput.append(fragment);
   renumberEditors();
-  exercise.querySelector("[data-exercise-name]").focus();
+  return exercise;
+}
+
+function populateDraft(draft) {
+  if (!draft) return;
+  form.elements.training_date.value = draft.trainingDate || localDateString();
+  form.elements.title.value = draft.title ?? "";
+  form.elements.duration_minutes.value = draft.durationMinutes ?? "5";
+  exercisesOutput.replaceChildren();
+  (draft.exercises ?? []).forEach((exercise) => addExercise(exercise));
+  if (!exercisesOutput.firstElementChild) addExercise();
+  showValidation([]);
+  setStatus("快速新增建議已載入，你可以修改後儲存。", "success");
 }
 
 function readInput() {
@@ -59,13 +90,7 @@ function readInput() {
     exercises: Array.from(exercisesOutput.querySelectorAll("[data-exercise]")).map((exercise) => ({
       name: exercise.querySelector("[data-exercise-name]").value,
       category: exercise.querySelector("[data-exercise-category]").value,
-      sets: Array.from(exercise.querySelectorAll("[data-set]")).map((set) => ({
-        weightKg: set.querySelector("[data-set-weight]").value,
-        reps: set.querySelector("[data-set-reps]").value,
-        rpe: set.querySelector("[data-set-rpe]").value,
-        type: set.querySelector("[data-set-type]").value,
-        isWarmup: set.querySelector("[data-set-warmup]").checked,
-      })),
+      sets: Array.from(exercise.querySelectorAll("[data-set]")).map(readSetValues),
     })),
   };
 }
@@ -129,9 +154,13 @@ function handleEditorClick(event) {
 
 async function initialize() {
   form.elements.training_date.value = localDateString();
-  document.querySelector("[data-add-exercise]").addEventListener("click", addExercise);
+  document.querySelector("[data-add-exercise]").addEventListener("click", () => {
+    const exercise = addExercise();
+    exercise.querySelector("[data-exercise-name]").focus();
+  });
   exercisesOutput.addEventListener("click", handleEditorClick);
   addExercise();
+  populateDraft(appState.get("recordDraft"));
 
   let selectedSpreadsheet = appState.get("selectedSpreadsheet");
   const connectionMessage = document.querySelector("[data-connection-message]");
@@ -145,9 +174,11 @@ async function initialize() {
   };
   updateConnection();
   window.addEventListener("fitness:state-change", (event) => {
-    if (event.detail.key !== "selectedSpreadsheet") return;
-    selectedSpreadsheet = event.detail.value;
-    updateConnection();
+    if (event.detail.key === "selectedSpreadsheet") {
+      selectedSpreadsheet = event.detail.value;
+      updateConnection();
+    }
+    if (event.detail.key === "recordDraft" && event.detail.value) populateDraft(event.detail.value);
   });
 
   const clientId = window.FitnessConfig?.googleSheets?.oauthClientId?.trim();
@@ -163,7 +194,7 @@ async function initialize() {
   setStatus("正在準備 Google 授權…");
   try {
     await oauth.initialize();
-    setStatus(`將寫入：${selectedSpreadsheet.name}`);
+    setStatus(selectedSpreadsheet?.name ? `將寫入：${selectedSpreadsheet.name}` : "Google 授權已就緒。請先選擇試算表。");
   } catch (error) {
     setStatus(describeError(error), "error");
     setSaving(false);
@@ -190,6 +221,7 @@ async function initialize() {
         accessToken,
         createWorkoutRecords(input),
       );
+      appState.set("recordDraft", null);
       window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "record" } }));
       setStatus("訓練紀錄已儲存，正在返回 Dashboard。", "success");
       window.location.hash = "/dashboard";

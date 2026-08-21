@@ -1,0 +1,46 @@
+<section class="page-section quick-add-page" aria-labelledby="quick-add-title">
+  <div class="section-header">
+    <p class="eyebrow">Quick Add</p>
+    <h1 id="quick-add-title" tabindex="-1">快速新增紀錄</h1>
+    <p class="section-lede">選擇健力項目與訓練模式，系統會依目前 1RM 產生可編輯的訓練建議。</p>
+  </div>
+
+  <div class="empty-state" data-quick-connection hidden></div>
+
+  <section class="quick-add-step" aria-labelledby="quick-lift-title">
+    <div class="step-heading"><span>1</span><h2 id="quick-lift-title">選擇項目</h2></div>
+    <div class="choice-card-grid lift-choice-grid" data-lift-choices></div>
+  </section>
+
+  <section class="quick-add-step" aria-labelledby="quick-mode-title">
+    <div class="step-heading"><span>2</span><h2 id="quick-mode-title">選擇訓練模式</h2></div>
+    <div class="choice-card-grid mode-choice-grid" data-mode-choices></div>
+  </section>
+
+  <div class="card manual-one-rm" data-manual-one-rm hidden>
+    <label class="field">
+      <span>參考 1RM（kg）</span>
+      <input type="number" data-reference-one-rm min="0.5" step="0.5" inputmode="decimal">
+    </label>
+    <p>找不到有效的目前重量或歷史紀錄，請手動輸入這次計算使用的 1RM。此值不會修改 Goals。</p>
+  </div>
+
+  <div class="validation-summary" data-quick-error role="alert" hidden></div>
+  <button class="button primary quick-generate-button" type="button" data-generate-workout>產生訓練建議</button>
+
+  <section class="card quick-preview" data-workout-preview aria-labelledby="quick-preview-title" hidden>
+    <div>
+      <p class="eyebrow">Workout Preview</p>
+      <h2 id="quick-preview-title">訓練建議</h2>
+    </div>
+    <dl class="preview-details">
+      <div><dt>項目</dt><dd data-preview-lift></dd></div>
+      <div><dt>參考 1RM</dt><dd data-preview-reference></dd></div>
+      <div><dt>來源</dt><dd data-preview-source></dd></div>
+      <div><dt>模式</dt><dd data-preview-mode></dd></div>
+      <div><dt>預設</dt><dd data-preview-preset></dd></div>
+      <div><dt>建議內容</dt><dd data-preview-workout></dd></div>
+    </dl>
+    <button class="button primary" type="button" data-edit-workout>編輯並儲存</button>
+  </section>
+</section>

@@ -1,3 +1,5 @@
+import { findBestEstimatedOneRepMax } from "./one-rep-max.js";
+
 export const GOAL_LIFTS = ["squat", "bench", "deadlift"];
 
 const GOAL_LABELS = {
@@ -83,19 +85,6 @@ export function createGoalRecords(goals) {
     }));
 }
 
-function bestEstimatedOneRepMax(workouts, lift) {
-  let best = 0;
-  workouts.forEach((workout) => workout.exercises.forEach((exercise) => {
-    if (exercise.category !== lift) return;
-    exercise.sets.forEach((set) => {
-      if (set.reps < 1 || set.reps > 12 || set.weight <= 0) return;
-      const estimate = set.reps === 1 ? set.weight : set.weight * (1 + set.reps / 30);
-      best = Math.max(best, estimate);
-    });
-  }));
-  return Math.round(best * 10) / 10;
-}
-
 export function createGoalProgress(goals, workouts) {
   return goals.map((goal) => {
     const progress = goal.targetWeightKg > 0 ? goal.currentWeightKg / goal.targetWeightKg * 100 : 0;
@@ -104,7 +93,7 @@ export function createGoalProgress(goals, workouts) {
       label: GOAL_LABELS[goal.lift] ?? goal.lift,
       progress: Math.round(progress * 10) / 10,
       displayProgress: Math.min(100, Math.max(0, progress)),
-      estimatedOneRepMax: bestEstimatedOneRepMax(workouts, goal.lift),
+      estimatedOneRepMax: findBestEstimatedOneRepMax(workouts, goal.lift),
     };
   });
 }

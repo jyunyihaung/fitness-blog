@@ -282,6 +282,120 @@ code {
   margin-inline: auto;
 }
 
+.quick-add-page {
+  max-width: 64rem;
+  margin-inline: auto;
+}
+
+.quick-add-step {
+  display: grid;
+  margin-top: var(--space-6);
+  gap: var(--space-4);
+}
+
+.step-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.step-heading > span {
+  display: inline-grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.step-heading h2 {
+  margin: 0;
+}
+
+.choice-card-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.lift-choice-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mode-choice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.choice-card {
+  display: grid;
+  min-height: 5rem;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  gap: var(--space-1);
+}
+
+.choice-card strong {
+  font-size: 1.0625rem;
+}
+
+.choice-card span {
+  color: var(--color-muted);
+}
+
+.choice-card[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: color-mix(in srgb, var(--color-accent) 12%, var(--color-surface));
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.manual-one-rm,
+.quick-preview {
+  display: grid;
+  margin-top: var(--space-5);
+  gap: var(--space-4);
+}
+
+.manual-one-rm p {
+  margin: 0;
+  color: var(--color-muted);
+}
+
+.quick-generate-button {
+  width: 100%;
+  margin-top: var(--space-5);
+}
+
+.preview-details {
+  display: grid;
+  margin: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.preview-details div {
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+}
+
+.preview-details dt {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.preview-details dd {
+  margin: var(--space-1) 0 0;
+  font-weight: 750;
+}
+
 .goal-connect,
 .goals-form {
   margin-top: var(--space-6);
@@ -717,6 +831,12 @@ code {
 
   .goal-card-grid,
   .goal-editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lift-choice-grid,
+  .mode-choice-grid,
+  .preview-details {
     grid-template-columns: 1fr;
   }
 
