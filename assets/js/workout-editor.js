@@ -1,3 +1,5 @@
+import { normalizeExerciseName, sortExerciseSuggestions } from "./exercises.js";
+
 const exerciseTemplate = document.querySelector("[data-exercise-template]");
 const setTemplate = document.querySelector("[data-set-template]");
 
@@ -25,6 +27,19 @@ function readSet(set) {
 }
 
 export function createWorkoutEditor(root, { completionEnabled = false } = {}) {
+  let exerciseOptions = [];
+
+  function setExerciseOptions(exercises = []) {
+    exerciseOptions = sortExerciseSuggestions(exercises);
+    const datalist = document.querySelector("[data-exercise-suggestions]");
+    if (!datalist) return;
+    datalist.replaceChildren(...exerciseOptions.map((exercise) => {
+      const option = document.createElement("option");
+      option.value = exercise.name;
+      option.label = exercise.category;
+      return option;
+    }));
+  }
   function renumber() {
     root.querySelectorAll("[data-exercise]").forEach((exercise, exerciseIndex) => {
       exercise.querySelector("[data-exercise-number]").textContent = String(exerciseIndex + 1);
@@ -81,5 +96,16 @@ export function createWorkoutEditor(root, { completionEnabled = false } = {}) {
     renumber();
   });
 
-  return { addExercise, load, read };
+  function applyExerciseMatch(event) {
+    if (!event.target.matches("[data-exercise-name]")) return;
+    const match = exerciseOptions.find((exercise) => exercise.normalizedName === normalizeExerciseName(event.target.value));
+    if (!match) return;
+    event.target.value = match.name;
+    event.target.closest("[data-exercise]").querySelector("[data-exercise-category]").value = match.category;
+  }
+
+  root.addEventListener("input", applyExerciseMatch);
+  root.addEventListener("change", applyExerciseMatch);
+
+  return { addExercise, load, read, setExerciseOptions };
 }

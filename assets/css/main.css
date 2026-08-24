@@ -609,6 +609,35 @@ code {
   margin-top: var(--space-6);
 }
 
+.exercise-manager {
+  display: grid;
+  margin-top: var(--space-7);
+  gap: var(--space-4);
+}
+
+.exercise-manager-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.exercise-manager-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.exercise-manager-item h3,
+.exercise-manager-item p {
+  margin: 0;
+}
+
+.exercise-manager-item p {
+  margin-top: var(--space-1);
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
 .goal-connect {
   justify-items: start;
 }
@@ -1126,6 +1155,11 @@ code {
   }
 
   .section-header-with-action {
+    flex-direction: column;
+  }
+
+  .exercise-manager-item {
+    align-items: stretch;
     flex-direction: column;
   }
 

@@ -1,4 +1,4 @@
-import { appendWorkoutRecord, replaceWorkoutRecord } from "./google-sheets.js";
+import { appendWorkoutRecord, replaceWorkoutRecord, syncUsedExercises } from "./google-sheets.js";
 import { googleAuth } from "./auth-service.js";
 import { appState } from "./app-state.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
@@ -265,6 +265,7 @@ async function initialize() {
     exercise.querySelector("[data-exercise-name]").focus();
   });
   editor.load();
+  editor.setExerciseOptions(appState.get("exercises"));
   populateDraft(appState.get("recordDraft"));
   setupShareDialogs();
   cancelLink.addEventListener("click", () => {
@@ -288,6 +289,7 @@ async function initialize() {
       updateConnection();
     }
     if (event.detail.key === "recordDraft" && event.detail.value) populateDraft(event.detail.value);
+    if (event.detail.key === "exercises") editor.setExerciseOptions(event.detail.value);
   });
   window.addEventListener("fitness:route-change", (event) => {
     if (event.detail.route !== "/record/new" && editingSessionId) {
@@ -334,6 +336,11 @@ async function initialize() {
       const record = createWorkoutRecords(input);
       if (editingSessionId) await replaceWorkoutRecord(selectedSpreadsheet.id, accessToken, editingSessionId, record);
       else await appendWorkoutRecord(selectedSpreadsheet.id, accessToken, record);
+      try {
+        appState.set("exercises", await syncUsedExercises(selectedSpreadsheet.id, accessToken, input.exercises));
+      } catch (_) {
+        window.alert("訓練紀錄已儲存，但動作清單同步失敗。下次連線時仍可繼續使用訓練紀錄。");
+      }
       appState.set("recordDraft", null);
       window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "record" } }));
       setStatus(editingSessionId ? "訓練紀錄已更新，正在返回紀錄列表。" : "訓練紀錄已儲存，正在返回 Dashboard。", "success");

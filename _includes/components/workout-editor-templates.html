@@ -3,7 +3,7 @@
     <legend>動作 <span data-exercise-number></span></legend>
     <div class="exercise-editor-header">
       <div class="form-grid exercise-fields">
-        <label class="field"><span>動作名稱 *</span><input type="text" data-exercise-name maxlength="120" autocomplete="off" placeholder="例如：Squat"></label>
+        <label class="field"><span>動作名稱 *</span><input type="text" data-exercise-name list="exercise-suggestions" maxlength="120" autocomplete="off" placeholder="例如：Squat"></label>
         <label class="field">
           <span>分類</span>
           <select data-exercise-category>
@@ -17,6 +17,8 @@
     <button class="button compact-button" type="button" data-add-set>＋ 新增一組</button>
   </fieldset>
 </template>
+
+<datalist id="exercise-suggestions" data-exercise-suggestions></datalist>
 
 <template data-set-template>
   <fieldset class="set-editor" data-set>

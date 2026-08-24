@@ -4,6 +4,7 @@ const state = {
   selectedSpreadsheet: getSelectedSpreadsheet(),
   workouts: [],
   goals: [],
+  exercises: [],
   statistics: null,
   recordDraft: null,
 };

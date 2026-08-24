@@ -7,6 +7,7 @@ import { appState } from "./app-state.js";
 import { createTrainingSpreadsheet, pickSpreadsheet, readRanges, validateSpreadsheet } from "./google-sheets.js";
 import { getSelectedSpreadsheet } from "./preferences.js";
 import { safeErrorMessage } from "./app-error.js";
+import { parseExercises } from "./exercises.js";
 
 let activeCharts = [];
 
@@ -139,15 +140,19 @@ function finishSetupOperation(activeButton) {
 }
 
 async function loadDashboard(spreadsheet, accessToken) {
-  const [workouts, goals] = await Promise.all([
+  const [workouts, goals, exercises] = await Promise.all([
     getWorkoutData({ spreadsheetId: spreadsheet.id, accessToken }),
     accessToken
       ? readRanges(spreadsheet.id, accessToken, ["Goals"]).then(([rows]) => parseGoals(rows))
+      : Promise.resolve([]),
+    accessToken
+      ? readRanges(spreadsheet.id, accessToken, ["Exercises"]).then(([rows]) => parseExercises(rows))
       : Promise.resolve([]),
   ]);
   const statistics = createStatistics(workouts);
   appState.set("workouts", workouts);
   appState.set("goals", goals);
+  appState.set("exercises", exercises);
   appState.set("statistics", statistics);
   activeCharts.forEach((chart) => chart.destroy());
   activeCharts = [];

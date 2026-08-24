@@ -2,7 +2,7 @@ import { appState } from "./app-state.js";
 import { googleAuth } from "./auth-service.js";
 import { getWorkoutData } from "./data.js";
 import { parseGoals } from "./goals.js";
-import { appendWorkoutRecord, readRanges } from "./google-sheets.js";
+import { appendWorkoutRecord, readRanges, syncUsedExercises } from "./google-sheets.js";
 import { resolveReferenceOneRepMax } from "./one-rep-max.js";
 import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, parseManualOneRepMax, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
@@ -28,6 +28,7 @@ const guidance = document.querySelector("[data-training-guidance]");
 const warningOutput = document.querySelector("[data-training-warning]");
 const referenceModeInputs = Array.from(document.querySelectorAll("[name='quick_reference_mode']"));
 const editor = createWorkoutEditor(quickExercises, { completionEnabled: true });
+editor.setExerciseOptions(appState.get("exercises"));
 
 let selectedLift = "";
 let selectedMode = "";
@@ -266,6 +267,11 @@ async function saveWorkout() {
     const accessToken = await googleAuth.getAccessToken();
     saveStatus.textContent = "正在寫入 Google Sheet…";
     await appendWorkoutRecord(spreadsheet.id, accessToken, createWorkoutRecords(input));
+    try {
+      appState.set("exercises", await syncUsedExercises(spreadsheet.id, accessToken, input.exercises));
+    } catch (_) {
+      window.alert("訓練紀錄已儲存，但動作清單同步失敗。下次連線時仍可繼續使用訓練紀錄。");
+    }
     window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "quick-add" } }));
     saveStatus.textContent = "訓練紀錄已儲存，正在返回 Dashboard。";
     window.location.hash = "/dashboard";
@@ -359,5 +365,6 @@ quickExercises.addEventListener("change", updateTrainingWarning);
 quickExercises.addEventListener("click", () => queueMicrotask(updateTrainingWarning));
 window.addEventListener("fitness:state-change", (event) => {
   if (event.detail.key === "selectedSpreadsheet") updateConnection();
+  if (event.detail.key === "exercises") editor.setExerciseOptions(event.detail.value);
 });
 updateConnection();

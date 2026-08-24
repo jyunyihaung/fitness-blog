@@ -28,4 +28,28 @@
     <p class="save-status" data-settings-status role="status" aria-live="polite"></p>
     <button class="button primary" type="submit">儲存偏好設定</button>
   </form>
+
+  <section class="exercise-manager" data-exercise-manager hidden aria-labelledby="exercise-manager-title">
+    <div class="section-header section-header-with-action">
+      <div>
+        <p class="eyebrow">Exercise library</p>
+        <h2 id="exercise-manager-title">動作管理</h2>
+        <p class="section-lede">管理未來新增紀錄可選擇的動作。停用或更名不會修改歷史訓練。</p>
+      </div>
+      <button class="button" type="button" data-new-exercise>＋ 新增動作</button>
+    </div>
+    <label class="field"><span>搜尋動作</span><input type="search" data-exercise-search placeholder="輸入動作名稱或分類"></label>
+    <form class="card form-section exercise-manager-form" data-exercise-form hidden novalidate>
+      <input type="hidden" name="exercise_id">
+      <h3 class="card-title" data-exercise-form-title>新增動作</h3>
+      <div class="form-grid">
+        <label class="field"><span>動作名稱</span><input type="text" name="exercise_name" maxlength="120" required></label>
+        <label class="field"><span>分類</span><select name="category"><option value="squat">深蹲</option><option value="bench">臥推</option><option value="deadlift">硬舉</option><option value="accessory">輔助動作</option></select></label>
+      </div>
+      <div class="validation-summary" data-exercise-validation role="alert" hidden></div>
+      <div class="form-actions"><button class="button primary" type="submit">儲存動作</button><button class="button" type="button" data-cancel-exercise>取消</button></div>
+    </form>
+    <p class="save-status" data-exercise-status role="status" aria-live="polite"></p>
+    <div class="exercise-manager-list" data-exercise-list></div>
+  </section>
 </section>

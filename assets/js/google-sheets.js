@@ -1,4 +1,5 @@
 import { googleApiError, schemaError } from "./app-error.js";
+import { parseExercises, planExerciseSync } from "./exercises.js";
 
 const API_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
 const PICKER_SRC = "https://apis.google.com/js/api.js";
@@ -493,6 +494,68 @@ export async function upsertSettings(spreadsheetId, accessToken, settings) {
     method: "POST",
     body: JSON.stringify({ requests }),
   });
+}
+
+async function exerciseContext(spreadsheetId, accessToken) {
+  const fields = encodeURIComponent("sheets.properties(sheetId,title)");
+  const [metadata, valuesByRange] = await Promise.all([
+    apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=${fields}`, accessToken),
+    readRanges(spreadsheetId, accessToken, ["Exercises"]),
+  ]);
+  const sheetId = metadata.sheets?.find((sheet) => sheet.properties?.title === "Exercises")?.properties?.sheetId;
+  if (!Number.isInteger(sheetId)) throw schemaError();
+  const rows = sheetRowRecords(valuesByRange[0] ?? []);
+  if (HEADERS.Exercises.some((header) => !rows.headers.includes(header))) throw schemaError();
+  return { sheetId, headers: rows.headers, rows: rows.rows, exercises: parseExercises(valuesByRange[0] ?? []) };
+}
+
+export function buildExerciseUpsertRequest(sheetId, headers, existingRow, record) {
+  if (!existingRow) return { appendCells: { sheetId, rows: [toAppendRow(headers, record)], fields: "userEnteredValue" } };
+  return {
+    updateCells: {
+      range: { sheetId, startRowIndex: existingRow.rowIndex, endRowIndex: existingRow.rowIndex + 1, startColumnIndex: 0, endColumnIndex: headers.length },
+      rows: [toAppendRow(headers, record)],
+      fields: "userEnteredValue",
+    },
+  };
+}
+
+export async function saveExerciseRecord(spreadsheetId, accessToken, record) {
+  const context = await exerciseContext(spreadsheetId, accessToken);
+  const existing = context.rows.find((row) => row.record.exercise_id === record.exercise_id);
+  const request = buildExerciseUpsertRequest(context.sheetId, context.headers, existing, record);
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests: [request] }),
+  });
+}
+
+export async function setExerciseActive(spreadsheetId, accessToken, exerciseId, active) {
+  const context = await exerciseContext(spreadsheetId, accessToken);
+  const existing = context.rows.find((row) => row.record.exercise_id === exerciseId);
+  if (!existing) throw new Error("找不到要更新的動作，資料可能已被修改。");
+  const record = { ...existing.record, is_active: String(Boolean(active)) };
+  const request = buildExerciseUpsertRequest(context.sheetId, context.headers, existing, record);
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests: [request] }),
+  });
+}
+
+export async function syncUsedExercises(spreadsheetId, accessToken, workoutExercises, usedAt = new Date().toISOString()) {
+  const context = await exerciseContext(spreadsheetId, accessToken);
+  const plans = planExerciseSync(context.exercises, workoutExercises, usedAt);
+  if (plans.length === 0) return context.exercises;
+  const requests = plans.map((plan) => {
+    const existing = plan.type === "update" ? context.rows.find((row) => row.record.exercise_id === plan.id) : null;
+    return buildExerciseUpsertRequest(context.sheetId, context.headers, existing, plan.record);
+  });
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests }),
+  });
+  const [rows] = await readRanges(spreadsheetId, accessToken, ["Exercises"]);
+  return parseExercises(rows);
 }
 
 export { HEADERS };

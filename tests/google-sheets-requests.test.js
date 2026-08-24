@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGoalUpsertRequests,
+  buildExerciseUpsertRequest,
   buildHeaderRepairData,
   buildSettingUpsertRequests,
   buildWorkoutAppendRequests,
@@ -85,5 +86,14 @@ describe("Google Sheets request builders", () => {
     expect(requests[0].updateCells.range).toEqual(expect.objectContaining({ sheetId: 40, startRowIndex: 2 }));
     expect(requests[0].updateCells.rows[0].values.map((cell) => cell.userEnteredValue.stringValue)).toEqual(["dark", "theme", "now"]);
     expect(requests[1].appendCells.sheetId).toBe(40);
+  });
+
+  it("maps Exercise updates and appends using named header order", () => {
+    const headers = ["exercise_name", "exercise_id", "is_active"];
+    const record = { exercise_id: "squat", exercise_name: "Squat", is_active: "false" };
+    const update = buildExerciseUpsertRequest(50, headers, { rowIndex: 3 }, record);
+    expect(update.updateCells.range).toEqual(expect.objectContaining({ sheetId: 50, startRowIndex: 3 }));
+    expect(update.updateCells.rows[0].values.map((cell) => cell.userEnteredValue.stringValue)).toEqual(["Squat", "squat", "false"]);
+    expect(buildExerciseUpsertRequest(50, headers, null, record).appendCells.sheetId).toBe(50);
   });
 });
