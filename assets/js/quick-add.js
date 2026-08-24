@@ -163,6 +163,13 @@ export function roundWeight(weight, increment = 0.5) {
   return Math.round(number / step) * step;
 }
 
+export function parseManualOneRepMax(value) {
+  const number = Number(value);
+  if (value === "" || !Number.isFinite(number) || number <= 0) return null;
+  if (Math.abs(number * 2 - Math.round(number * 2)) > Number.EPSILON * 10) return null;
+  return number;
+}
+
 export function generateQuickAddDraft({ liftId, modeId, referenceOneRepMax, trainingDate, durationMinutes = "5" }) {
   const lift = QUICK_ADD_LIFTS[liftId];
   const mode = TRAINING_MODES[modeId];

@@ -81,8 +81,9 @@ deletion are available from the record list for connected, writable
 spreadsheets. Goal deletion and workbook-backed preferences are also available;
 Add Record also supports versioned copy/paste coach workout codes with checksum
 validation and an import preview. Quick Add can export its edited suggestion and
-complete training-mode guidance through the same format. Typed migration remains
-pending.
+complete training-mode guidance through the same format, with an explicit choice
+between the current resolved maximum and a manually entered maximum. Typed
+migration remains pending.
 
 - Welcome/setup flow implementing the two-button requirements and acceptance
   criteria in `ARCHITECTURE.md`.

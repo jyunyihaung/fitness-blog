@@ -143,6 +143,13 @@ RPE guidance, rest interval, technique tips, and any divergence warning. Export
 does not depend on the completed-set checkboxes; those checkboxes continue to
 control only which sets are saved as a completed workout.
 
+Quick Add provides an explicit reference-weight choice. **目前最大重量** resolves
+the selected lift from Goals current weight, historical best single, then
+historical estimated 1RM and therefore requires a connected Sheet. **手動輸入最大重量**
+uses only the entered positive 0.5 kg increment and can generate or export a
+suggestion without a Sheet connection; saving the completed workout still
+requires one.
+
 Open **訓練目標** to load and update squat, bench press, and deadlift goals. Goal
 progress uses the explicitly stored current and target weights. The Dashboard
 also shows an estimated 1RM calculated from recorded sets without overwriting

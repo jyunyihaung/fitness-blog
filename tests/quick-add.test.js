@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveReferenceOneRepMax } from "../assets/js/one-rep-max.js";
-import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
+import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, parseManualOneRepMax, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "../assets/js/record-validation.js";
 
 function generate(modeId, referenceOneRepMax = 100) {
@@ -57,6 +57,13 @@ describe("Quick Add prescription generation", () => {
   it("rejects missing or invalid reference 1RM safely", () => {
     expect(resolveReferenceOneRepMax({ lift: "squat" })).toBeNull();
     expect(() => generate("strength", 0)).toThrow("大於 0");
+  });
+
+  it("accepts only positive half-kilogram manual maximums", () => {
+    expect(parseManualOneRepMax("100.5")).toBe(100.5);
+    expect(parseManualOneRepMax("100.2")).toBeNull();
+    expect(parseManualOneRepMax("0")).toBeNull();
+    expect(parseManualOneRepMax("")).toBeNull();
   });
 
   it("returns guidance without blocking a workout that diverges from its mode", () => {

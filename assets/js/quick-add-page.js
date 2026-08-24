@@ -4,7 +4,7 @@ import { getWorkoutData } from "./data.js";
 import { parseGoals } from "./goals.js";
 import { appendWorkoutRecord, readRanges } from "./google-sheets.js";
 import { resolveReferenceOneRepMax } from "./one-rep-max.js";
-import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
+import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, parseManualOneRepMax, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 import { safeErrorMessage } from "./app-error.js";
@@ -26,6 +26,7 @@ const durationInput = document.querySelector("[data-quick-duration]");
 const exportButton = document.querySelector("[data-export-quick-workout]");
 const guidance = document.querySelector("[data-training-guidance]");
 const warningOutput = document.querySelector("[data-training-warning]");
+const referenceModeInputs = Array.from(document.querySelectorAll("[name='quick_reference_mode']"));
 const editor = createWorkoutEditor(quickExercises, { completionEnabled: true });
 
 let selectedLift = "";
@@ -125,9 +126,13 @@ function showError(message) {
   errorOutput.hidden = !message;
 }
 
-function setBusy(busy) {
+function selectedReferenceMode() {
+  return referenceModeInputs.find((input) => input.checked)?.value ?? "current";
+}
+
+function setBusy(busy, message = "正在讀取訓練資料…") {
   generateButton.disabled = busy;
-  generateButton.textContent = busy ? "正在讀取訓練資料…" : "產生訓練建議";
+  generateButton.textContent = busy ? message : "產生訓練建議";
 }
 
 async function loadCurrentData(spreadsheet) {
@@ -278,25 +283,31 @@ async function generateWorkout() {
   showError("");
   if (!selectedLift) return showError("請先選擇 Squat、Bench Press 或 Deadlift。");
   if (!selectedMode) return showError("請選擇一個訓練模式。");
+  const referenceMode = selectedReferenceMode();
   const spreadsheet = appState.get("selectedSpreadsheet");
-  if (!spreadsheet?.id) return showError("尚未選擇 Google Sheet，請先回到 Dashboard 完成連線。");
+  if (referenceMode === "current" && !spreadsheet?.id) {
+    return showError("使用目前最大重量需要先連接 Google Sheet，或改選手動輸入最大重量。");
+  }
 
-  setBusy(true);
+  setBusy(true, referenceMode === "current" ? "正在讀取目前最大重量…" : "正在產生訓練建議…");
   try {
-    const { workouts, goals } = await loadCurrentData(spreadsheet);
-    const reference = resolveReferenceOneRepMax({
-      lift: selectedLift,
-      goals,
-      workouts,
-      manualOneRepMax: manualInput.value,
-    });
-    if (!reference) {
-      manualPanel.hidden = false;
-      manualInput.focus();
-      showError("找不到可用的 1RM，請輸入參考 1RM 後再次產生。");
-      return;
+    let reference;
+    if (referenceMode === "manual") {
+      const manualValue = parseManualOneRepMax(manualInput.value);
+      if (manualValue === null) {
+        manualInput.focus();
+        showError("請輸入大於 0，並以 0.5 kg 為單位的手動最大重量。");
+        return;
+      }
+      reference = { value: manualValue, source: "manual" };
+    } else {
+      const { workouts, goals } = await loadCurrentData(spreadsheet);
+      reference = resolveReferenceOneRepMax({ lift: selectedLift, goals, workouts });
+      if (!reference) {
+        showError("找不到可用的目前最大重量，請先設定 Goals、建立訓練紀錄，或改選手動輸入最大重量。");
+        return;
+      }
     }
-    manualPanel.hidden = reference.source !== "manual";
     generatedDraft = generateQuickAddDraft({
       liftId: selectedLift,
       modeId: selectedMode,
@@ -314,10 +325,11 @@ async function generateWorkout() {
 
 function updateConnection() {
   const spreadsheet = appState.get("selectedSpreadsheet");
-  connectionOutput.hidden = Boolean(spreadsheet?.id);
+  const manual = selectedReferenceMode() === "manual";
+  connectionOutput.hidden = Boolean(spreadsheet?.id) || manual;
   connectionOutput.textContent = spreadsheet?.id
     ? ""
-    : "尚未選擇 Google Sheet。你仍可查看選項，但產生建議前必須先至 Dashboard 連線。";
+    : "尚未選擇 Google Sheet。目前最大重量需要連線；你也可以改用手動輸入最大重量。";
 }
 
 renderChoices();
@@ -326,6 +338,15 @@ document.querySelector("[data-route-page='/quick-add']").addEventListener("click
   if (choice) selectChoice(choice);
 });
 generateButton.addEventListener("click", generateWorkout);
+referenceModeInputs.forEach((input) => input.addEventListener("change", () => {
+  const manual = selectedReferenceMode() === "manual";
+  manualPanel.hidden = !manual;
+  preview.hidden = true;
+  showError("");
+  updateConnection();
+  if (manual) manualInput.focus();
+}));
+manualInput.addEventListener("input", () => { preview.hidden = true; });
 document.querySelector("[data-quick-add-exercise]").addEventListener("click", () => {
   const exercise = editor.addExercise();
   exercise.querySelector("[data-exercise-name]").focus();

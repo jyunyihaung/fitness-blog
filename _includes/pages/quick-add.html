@@ -2,7 +2,7 @@
   <div class="section-header">
     <p class="eyebrow">Quick Add</p>
     <h1 id="quick-add-title" tabindex="-1">快速新增紀錄</h1>
-    <p class="section-lede">選擇健力項目與訓練模式，系統會依目前 1RM 產生可編輯的訓練建議。</p>
+    <p class="section-lede">選擇健力項目、最大重量來源與訓練模式，系統會依參考 1RM 產生可編輯的訓練建議。</p>
   </div>
 
   <div class="empty-state" data-quick-connection hidden></div>
@@ -12,8 +12,30 @@
     <div class="choice-card-grid lift-choice-grid" data-lift-choices></div>
   </section>
 
+  <section class="quick-add-step" aria-labelledby="quick-reference-title">
+    <div class="step-heading"><span>2</span><h2 id="quick-reference-title">選擇最大重量來源</h2></div>
+    <fieldset class="reference-choice-grid">
+      <legend class="visually-hidden">最大重量來源</legend>
+      <label class="choice-card reference-choice">
+        <input type="radio" name="quick_reference_mode" value="current" checked>
+        <span><strong>目前最大重量</strong><small>依序使用 Goals 目前重量、歷史最佳單次或歷史估算 1RM。</small></span>
+      </label>
+      <label class="choice-card reference-choice">
+        <input type="radio" name="quick_reference_mode" value="manual">
+        <span><strong>手動輸入最大重量</strong><small>直接使用你輸入的參考 1RM，不讀取或修改 Goals。</small></span>
+      </label>
+    </fieldset>
+    <div class="card manual-one-rm" data-manual-one-rm hidden>
+      <label class="field">
+        <span>手動參考 1RM（kg）</span>
+        <input type="number" data-reference-one-rm min="0.5" step="0.5" inputmode="decimal">
+      </label>
+      <p>此值只用於產生本次建議，不會修改 Goals 或訓練紀錄。</p>
+    </div>
+  </section>
+
   <section class="quick-add-step" aria-labelledby="quick-mode-title">
-    <div class="step-heading"><span>2</span><h2 id="quick-mode-title">選擇訓練模式</h2></div>
+    <div class="step-heading"><span>3</span><h2 id="quick-mode-title">選擇訓練模式</h2></div>
     <div class="choice-card-grid mode-choice-grid" data-mode-choices></div>
     <aside class="card training-guidance" data-training-guidance aria-labelledby="training-guidance-title" hidden>
       <div class="training-guidance-header">
@@ -52,14 +74,6 @@
       <p class="guidance-disclaimer">此提示用於協助當下判斷，不取代合格教練的個別指導或醫療建議。</p>
     </aside>
   </section>
-
-  <div class="card manual-one-rm" data-manual-one-rm hidden>
-    <label class="field">
-      <span>參考 1RM（kg）</span>
-      <input type="number" data-reference-one-rm min="0.5" step="0.5" inputmode="decimal">
-    </label>
-    <p>找不到有效的目前重量或歷史紀錄，請手動輸入這次計算使用的 1RM。此值不會修改 Goals。</p>
-  </div>
 
   <div class="validation-summary" data-quick-error role="alert" hidden></div>
   <button class="button primary quick-generate-button" type="button" data-generate-workout>產生訓練建議</button>

@@ -26,6 +26,13 @@ completed. Validation, Sessions/Sets conversion, and Google Sheets writes remain
 a single shared pipeline. Completion is transient UI state and does not change
 the Sheets schema.
 
+The reference source is an explicit user choice. Current maximum mode resolves
+Goals current weight, historical best single, then historical estimated 1RM.
+Manual mode validates a positive 0.5 kg increment and does not read or update
+Goals or history, so suggestion generation and coach-code export can work
+without a spreadsheet connection. Persisting a completed workout still uses the
+normal authenticated repository pipeline.
+
 Coach workout sharing is another draft producer. The Add Record page converts a
 validated workout into a versioned `FITNESS-WORKOUT:1` text code using UTF-8
 Base64URL and a SHA-256 checksum. An imported code is treated as untrusted input,
