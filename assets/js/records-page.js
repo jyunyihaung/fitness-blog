@@ -3,6 +3,7 @@ import { googleAuth } from "./auth-service.js";
 import { getSelectedSpreadsheet } from "./preferences.js";
 import { appState } from "./app-state.js";
 import { deleteWorkoutRecord } from "./google-sheets.js";
+import { safeErrorMessage } from "./app-error.js";
 
 function appendText(parent, tagName, className, text) {
   const element = document.createElement(tagName);
@@ -127,9 +128,7 @@ function renderSession(workout, editable) {
 }
 
 function describeError(error) {
-  if (error?.status === 401) return "Google 授權已過期，請回到 Dashboard 重新連線。";
-  if (error?.status === 403) return "目前帳號沒有讀取這份 Google Sheet 的權限。";
-  return error?.message || "無法讀取訓練紀錄。";
+  return safeErrorMessage(error, "無法讀取訓練紀錄。");
 }
 
 function setStatus(message, state = "idle") {

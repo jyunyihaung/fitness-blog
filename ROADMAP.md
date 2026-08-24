@@ -35,8 +35,9 @@ configured; Vite, TypeScript, and ESLint remain pending.
 ## Phase 4 — Google integration
 
 Status: in progress. The Jekyll client now contains the initial GIS token,
-Picker, workbook creation, validation, and private read path; typed clients,
-settings controls, tests, and production credential setup remain pending.
+Picker, workbook creation, validation, private read path, Settings connection
+controls, and explicit additive schema repair. Typed clients, broader integration
+tests, and production credential verification remain pending.
 
 - Add GIS token service with memory-only tokens and expiry handling.
 - Add typed Drive and Sheets clients.
@@ -46,8 +47,10 @@ settings controls, tests, and production credential setup remain pending.
   validate it, and persist only its spreadsheet ID.
 - Create a `Powerlifting Training Tracker` workbook with all six version 1
   sheets, headers, schema rows, settings, and default exercises.
-- Validate and non-destructively repair version 1 schemas.
-- Implement the Google Sheets repository and Settings connection UI.
+- Validate and non-destructively repair version 1 schemas. (implemented in the
+  current Jekyll client)
+- Implement the Google Sheets repository and Settings connection UI. (Settings
+  UI implemented; typed repository remains pending)
 
 Phase 4 is complete only when cancellation, permission denial, token expiry,
 invalid schema, network failure, and partial initialization have actionable UI
@@ -73,9 +76,10 @@ progress and estimated 1RM cards on the Dashboard. Quick Add now generates an
 editable Add Record draft from the three competition lifts, six centralized
 training modes, and a resolved or manually entered reference 1RM. Its inline
 editor shares the Add Record exercise/set component and saves only sets marked
-completed through the existing Sessions/Sets pipeline. Record
-goal deletion and typed migration remain pending. Record editing and deletion are
-available from the record list for connected, writable spreadsheets.
+completed through the existing Sessions/Sets pipeline. Record editing and
+deletion are available from the record list for connected, writable
+spreadsheets. Goal deletion and workbook-backed preferences are also available;
+typed migration remains pending.
 
 - Welcome/setup flow implementing the two-button requirements and acceptance
   criteria in `ARCHITECTURE.md`.

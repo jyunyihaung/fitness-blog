@@ -1,3 +1,5 @@
+import { AppError } from "./app-error.js";
+
 const GIS_SRC = "https://accounts.google.com/gsi/client";
 
 function loadScript(src, id) {
@@ -22,7 +24,7 @@ function loadScript(src, id) {
       script.dataset.loaded = "true";
       resolve();
     }, { once: true });
-    script.addEventListener("error", () => reject(new Error("Unable to load Google Identity Services.")), { once: true });
+    script.addEventListener("error", () => reject(new AppError("network_error", { retryable: true })), { once: true });
     document.head.append(script);
   });
 }
@@ -38,12 +40,12 @@ export class GoogleOAuthClient {
   }
 
   async initialize() {
-    if (!this.clientId) throw new Error("Google OAuth client ID is not configured.");
+    if (!this.clientId) throw new AppError("configuration_error");
     if (!this.initialization) {
       this.initialization = loadScript(GIS_SRC, "google-identity-services")
         .then(() => {
           if (!window.google?.accounts?.oauth2) {
-            throw new Error("Google Identity Services is unavailable.");
+            throw new AppError("configuration_error");
           }
         })
         .catch((error) => {
@@ -63,7 +65,7 @@ export class GoogleOAuthClient {
         scope: this.scope,
         callback: (response) => {
           if (response.error || !response.access_token) {
-            reject(new Error(response.error_description || response.error || "Google authorization failed."));
+            reject(new AppError("permission_denied"));
             return;
           }
           this.accessToken = response.access_token;
@@ -72,7 +74,7 @@ export class GoogleOAuthClient {
         },
         error_callback: (error) => {
           if (error.type === "popup_closed") reject(new DOMException("Authorization was cancelled.", "AbortError"));
-          else reject(new Error("Google authorization could not be opened."));
+          else reject(new AppError("google_api_error"));
         },
       });
       this.tokenClient.requestAccessToken();

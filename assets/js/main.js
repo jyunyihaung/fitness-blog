@@ -6,6 +6,7 @@ import { googleAuth } from "./auth-service.js";
 import { appState } from "./app-state.js";
 import { createTrainingSpreadsheet, pickSpreadsheet, readRanges, validateSpreadsheet } from "./google-sheets.js";
 import { getSelectedSpreadsheet } from "./preferences.js";
+import { safeErrorMessage } from "./app-error.js";
 
 let activeCharts = [];
 
@@ -159,10 +160,7 @@ async function loadDashboard(spreadsheet, accessToken) {
 }
 
 function describeError(error) {
-  if (error?.name === "AbortError") return "操作已取消，你可以重新選擇。";
-  if (error?.status === 401) return "Google 授權已過期，請重新連線。";
-  if (error?.status === 403) return "目前帳號沒有存取此檔案的權限。";
-  return error?.message || "無法完成 Google Sheets 設定。";
+  return safeErrorMessage(error, "無法完成 Google Sheets 設定。");
 }
 
 async function runSetupOperation(button, workingText, operation) {

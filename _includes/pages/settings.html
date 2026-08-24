@@ -1,0 +1,31 @@
+<section class="page-section settings-page" aria-labelledby="settings-title">
+  <div class="section-header">
+    <p class="eyebrow">Application settings</p>
+    <h1 id="settings-title" tabindex="-1">設定</h1>
+    <p class="section-lede">管理 Google Sheet 連線、資料結構及應用程式偏好。</p>
+  </div>
+
+  <section class="card form-section" aria-labelledby="connection-title">
+    <h2 id="connection-title" class="card-title">Google Sheet 連線</h2>
+    <p data-settings-connection>尚未選擇 Google Sheet。</p>
+    <div class="form-actions">
+      <button class="button primary" type="button" data-load-settings>連線並載入設定</button>
+      <button class="button" type="button" data-repair-schema>檢查並修復資料結構</button>
+      <button class="button danger-button" type="button" data-disconnect-sheet>移除此裝置上的連線</button>
+    </div>
+    <p class="save-status" data-schema-status role="status" aria-live="polite"></p>
+  </section>
+
+  <form class="settings-form card form-section" data-settings-form hidden novalidate>
+    <h2 class="card-title">偏好設定</h2>
+    <div class="form-grid">
+      <label class="field"><span>重量單位</span><select name="weight_unit"><option value="kg">公斤（kg）</option></select></label>
+      <label class="field"><span>介面語言</span><select name="locale"><option value="zh-TW">繁體中文</option><option value="en">English</option></select></label>
+      <label class="field"><span>主題</span><select name="theme"><option value="system">跟隨系統</option><option value="light">淺色</option><option value="dark">深色</option></select></label>
+      <label class="field checkbox-field"><input type="checkbox" name="default_rpe_enabled"><span>新增組數時預設啟用 RPE</span></label>
+    </div>
+    <div class="validation-summary" data-settings-validation role="alert" hidden></div>
+    <p class="save-status" data-settings-status role="status" aria-live="polite"></p>
+    <button class="button primary" type="submit">儲存偏好設定</button>
+  </form>
+</section>

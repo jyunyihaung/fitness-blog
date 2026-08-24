@@ -1,3 +1,5 @@
+import { googleApiError, schemaError } from "./app-error.js";
+
 const API_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
 const PICKER_SRC = "https://apis.google.com/js/api.js";
 const SHEET_TITLES = ["Sessions", "Sets", "Goals", "Settings", "Schema", "Exercises"];
@@ -32,16 +34,13 @@ async function apiRequest(url, accessToken, options = {}) {
   });
   if (response.ok) return response.status === 204 ? null : response.json();
 
-  let message = `Google API returned ${response.status}.`;
+  let cause;
   try {
-    const body = await response.json();
-    message = body.error?.message || message;
+    cause = await response.json();
   } catch (_) {
-    // Keep the sanitized HTTP status message when Google returns a non-JSON body.
+    // Ignore bodies that are not JSON. They must never be shown to the user.
   }
-  const error = new Error(message);
-  error.status = response.status;
-  throw error;
+  throw googleApiError(response.status, cause);
 }
 
 function loadPickerScript() {
@@ -94,7 +93,7 @@ export async function validateSpreadsheet(spreadsheetId, accessToken) {
   const metadata = await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=${fields}`, accessToken);
   const titles = new Set(metadata.sheets?.map((sheet) => sheet.properties?.title));
   const missingSheets = SHEET_TITLES.filter((title) => !titles.has(title));
-  if (missingSheets.length > 0) throw new Error(`Missing required sheets: ${missingSheets.join(", ")}.`);
+  if (missingSheets.length > 0) throw schemaError();
 
   const ranges = [...SHEET_TITLES.map((title) => `${title}!1:1`), "Schema!A:B"];
   const valuesByRange = await readRanges(spreadsheetId, accessToken, ranges);
@@ -102,14 +101,14 @@ export async function validateSpreadsheet(spreadsheetId, accessToken) {
     const actualHeaders = new Set((valuesByRange[index]?.[0] ?? []).map(String));
     const missingHeaders = HEADERS[title].filter((header) => !actualHeaders.has(header));
     if (missingHeaders.length > 0) {
-      throw new Error(`${title} is missing required columns: ${missingHeaders.join(", ")}.`);
+      throw schemaError();
     }
   });
 
-  const rows = valuesByRange[SHEET_TITLES.length] ?? [];
-  const values = new Map(rows.slice(1).map(([key, value]) => [key, String(value)]));
+  const rows = sheetRowRecords(valuesByRange[SHEET_TITLES.length] ?? []);
+  const values = new Map(rows.rows.map(({ record }) => [record.key, record.value]));
   if (values.get("app_id") !== "powerlifting-training-tracker" || values.get("schema_version") !== "1") {
-    throw new Error("The selected spreadsheet is not a compatible version 1 training tracker.");
+    throw schemaError();
   }
   return { id: spreadsheetId, name: metadata.properties?.title || "Google Sheet" };
 }
@@ -141,6 +140,85 @@ export async function createTrainingSpreadsheet(accessToken) {
     body: JSON.stringify({ valueInputOption: "RAW", data }),
   });
   return validateSpreadsheet(spreadsheetId, accessToken);
+}
+
+export async function repairSpreadsheet(spreadsheetId, accessToken) {
+  const fields = encodeURIComponent("properties.title,sheets.properties(sheetId,title)");
+  let metadata = await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=${fields}`, accessToken);
+  const existingTitles = new Set(metadata.sheets?.map((sheet) => sheet.properties?.title));
+  const missingTitles = SHEET_TITLES.filter((title) => !existingTitles.has(title));
+  if (missingTitles.length > 0) {
+    await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+      method: "POST",
+      body: JSON.stringify({ requests: missingTitles.map((title) => ({ addSheet: { properties: { title } } })) }),
+    });
+  }
+
+  const rows = await readRanges(spreadsheetId, accessToken, SHEET_TITLES.map((title) => `${title}!1:1`));
+  const data = buildHeaderRepairData(rows);
+  if (data.length > 0) {
+    await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}/values:batchUpdate`, accessToken, {
+      method: "POST",
+      body: JSON.stringify({ valueInputOption: "RAW", data }),
+    });
+  }
+
+  const [schemaRows, settingsRows, exerciseRows] = await readRanges(
+    spreadsheetId,
+    accessToken,
+    ["Schema!A:B", "Settings!A:C", "Exercises!A:G"],
+  );
+  const schemaData = sheetRowRecords(schemaRows);
+  const schema = new Map(schemaData.rows.map(({ record }) => [record.key, record.value]));
+  if (schema.has("app_id") && schema.get("app_id") !== "powerlifting-training-tracker") throw schemaError();
+  if (schema.has("schema_version") && schema.get("schema_version") !== "1") throw schemaError();
+  const now = new Date().toISOString();
+  if (missingTitles.length > 0) metadata = await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=${fields}`, accessToken);
+  const sheetIds = new Map(metadata.sheets?.map((sheet) => [sheet.properties?.title, sheet.properties?.sheetId]));
+  const initialization = [];
+  const appendRecords = (title, headers, records) => {
+    if (records.length === 0) return;
+    initialization.push({ appendCells: { sheetId: sheetIds.get(title), rows: records.map((record) => toAppendRow(headers, record)), fields: "userEnteredValue" } });
+  };
+  const schemaHeaders = schemaData.headers;
+  const schemaRecords = [];
+  if (!schema.has("app_id")) schemaRecords.push({ key: "app_id", value: "powerlifting-training-tracker" });
+  if (!schema.has("schema_version")) schemaRecords.push({ key: "schema_version", value: "1" });
+  appendRecords("Schema", schemaHeaders, schemaRecords);
+  if (settingsRows.length <= 1) appendRecords("Settings", settingsRows[0].map(String), [
+    { key: "weight_unit", value: "kg", updated_at: now },
+    { key: "locale", value: "zh-TW", updated_at: now },
+    { key: "theme", value: "system", updated_at: now },
+    { key: "default_rpe_enabled", value: "false", updated_at: now },
+  ]);
+  if (exerciseRows.length <= 1) appendRecords("Exercises", exerciseRows[0].map(String), DEFAULT_EXERCISES.map(([id, name, category]) => ({
+    exercise_id: id, exercise_name: name, category, is_default: true, is_active: true, last_used_at: "", created_at: now,
+  })));
+  if (initialization.length > 0) {
+    await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+      method: "POST",
+      body: JSON.stringify({ requests: initialization }),
+    });
+  }
+  return validateSpreadsheet(spreadsheetId, accessToken);
+}
+
+function columnName(columnNumber) {
+  let result = "";
+  for (let value = columnNumber; value > 0; value = Math.floor((value - 1) / 26)) {
+    result = String.fromCharCode(65 + ((value - 1) % 26)) + result;
+  }
+  return result;
+}
+
+export function buildHeaderRepairData(rows) {
+  const data = [];
+  SHEET_TITLES.forEach((title, index) => {
+    const current = (rows[index]?.[0] ?? []).map((header) => String(header).trim());
+    const missing = HEADERS[title].filter((header) => !current.includes(header));
+    if (missing.length > 0) data.push({ range: `${title}!${columnName(current.length + 1)}1`, values: [missing] });
+  });
+  return data;
 }
 
 function toAppendRow(headers, record) {
@@ -318,12 +396,12 @@ export async function upsertGoals(spreadsheetId, accessToken, goals) {
   ]);
   const goalSheet = metadata.sheets?.find((sheet) => sheet.properties?.title === "Goals");
   const sheetId = goalSheet?.properties?.sheetId;
-  if (!Number.isInteger(sheetId)) throw new Error("Missing required sheet: Goals.");
+  if (!Number.isInteger(sheetId)) throw schemaError();
 
   const rows = valuesByRange[0] ?? [];
   const headers = (rows[0] ?? []).map((header) => String(header).trim());
   const missing = HEADERS.Goals.filter((header) => !headers.includes(header));
-  if (missing.length > 0) throw new Error(`Goals is missing required columns: ${missing.join(", ")}.`);
+  if (missing.length > 0) throw schemaError();
 
   const existingRows = rows.slice(1).map((values, index) => ({
     rowIndex: index + 1,
@@ -334,6 +412,23 @@ export async function upsertGoals(spreadsheetId, accessToken, goals) {
   await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
     method: "POST",
     body: JSON.stringify({ requests }),
+  });
+}
+
+export async function deleteGoal(spreadsheetId, accessToken, goalId) {
+  const fields = encodeURIComponent("sheets.properties(sheetId,title)");
+  const [metadata, valuesByRange] = await Promise.all([
+    apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=${fields}`, accessToken),
+    readRanges(spreadsheetId, accessToken, ["Goals"]),
+  ]);
+  const sheetId = metadata.sheets?.find((sheet) => sheet.properties?.title === "Goals")?.properties?.sheetId;
+  if (!Number.isInteger(sheetId)) throw schemaError();
+  const rows = sheetRowRecords(valuesByRange[0] ?? []);
+  const goal = rows.rows.find((row) => row.record.goal_id === goalId);
+  if (!goal) throw new Error("找不到要刪除的訓練目標，資料可能已被修改。");
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests: [{ deleteDimension: { range: { sheetId, dimension: "ROWS", startIndex: goal.rowIndex, endIndex: goal.rowIndex + 1 } } }] }),
   });
 }
 
@@ -364,6 +459,38 @@ export function buildGoalUpsertRequests(sheetId, headers, existingRows, goals) {
         fields: "userEnteredValue",
       },
     };
+  });
+}
+
+export function buildSettingUpsertRequests(sheetId, headers, existingRows, settings) {
+  const byKey = new Map(existingRows.filter((row) => row.record.key).map((row) => [row.record.key, row]));
+  return settings.map((setting) => {
+    const existing = byKey.get(setting.key);
+    if (!existing) return { appendCells: { sheetId, rows: [toAppendRow(headers, setting)], fields: "userEnteredValue" } };
+    return {
+      updateCells: {
+        range: { sheetId, startRowIndex: existing.rowIndex, endRowIndex: existing.rowIndex + 1, startColumnIndex: 0, endColumnIndex: headers.length },
+        rows: [toAppendRow(headers, setting)],
+        fields: "userEnteredValue",
+      },
+    };
+  });
+}
+
+export async function upsertSettings(spreadsheetId, accessToken, settings) {
+  const fields = encodeURIComponent("sheets.properties(sheetId,title)");
+  const [metadata, valuesByRange] = await Promise.all([
+    apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=${fields}`, accessToken),
+    readRanges(spreadsheetId, accessToken, ["Settings"]),
+  ]);
+  const sheetId = metadata.sheets?.find((sheet) => sheet.properties?.title === "Settings")?.properties?.sheetId;
+  if (!Number.isInteger(sheetId)) throw schemaError();
+  const rows = sheetRowRecords(valuesByRange[0] ?? []);
+  if (HEADERS.Settings.some((header) => !rows.headers.includes(header))) throw schemaError();
+  const requests = buildSettingUpsertRequests(sheetId, rows.headers, rows.rows, settings);
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests }),
   });
 }
 

@@ -29,13 +29,14 @@ deployment history.
 ## Application routes
 
 The GitHub Pages site uses a client-side hash router so Dashboard, Add Record,
-Quick Add, and Goals share one in-memory Google OAuth session:
+Quick Add, Goals, and Settings share one in-memory Google OAuth session:
 
 ```text
 /fitness-blog/#/dashboard
 /fitness-blog/#/record/new
 /fitness-blog/#/quick-add
 /fitness-blog/#/goals
+/fitness-blog/#/settings
 ```
 
 The legacy `/record/` and `/goals/` URLs redirect to their hash routes. Access
@@ -132,6 +133,12 @@ Open **訓練目標** to load and update squat, bench press, and deadlift goals.
 progress uses the explicitly stored current and target weights. The Dashboard
 also shows an estimated 1RM calculated from recorded sets without overwriting
 the stored current weight.
+
+Open **設定** to update workbook-backed preferences, remove the locally saved
+connection, or explicitly run an additive schema repair. Repair may create
+missing version 1 sheets, append missing headers, and initialize empty Settings,
+Schema, or Exercises data. It never removes, renames, reorders, or overwrites
+existing user columns and records.
 
 ## Future
 

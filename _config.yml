@@ -35,6 +35,8 @@ navigation:
     url: /#/records
   - label: 訓練目標
     url: /#/goals
+  - label: 設定
+    url: /#/settings
 
 exclude:
   - AGENTS.md

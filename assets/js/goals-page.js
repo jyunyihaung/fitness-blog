@@ -1,7 +1,8 @@
 import { createGoalRecords, parseGoals, validateGoals } from "./goals.js";
 import { googleAuth } from "./auth-service.js";
 import { appState } from "./app-state.js";
-import { readRanges, upsertGoals, validateSpreadsheet } from "./google-sheets.js";
+import { deleteGoal, readRanges, upsertGoals, validateSpreadsheet } from "./google-sheets.js";
+import { safeErrorMessage } from "./app-error.js";
 
 const connectPanel = document.querySelector("[data-goal-connect]");
 const connectionMessage = document.querySelector("[data-goal-connection-message]");
@@ -23,10 +24,7 @@ function setStatus(message, state = "idle") {
 }
 
 function describeError(error) {
-  if (error?.name === "AbortError") return "授權已取消，你可以再次連線。";
-  if (error?.status === 401) return "Google 授權已過期，請重新連線。";
-  if (error?.status === 403) return "目前 Google 帳號沒有存取這份試算表的權限。";
-  return error?.message || "無法處理訓練目標，請稍後重試。";
+  return safeErrorMessage(error, "無法處理訓練目標，請稍後重試。");
 }
 
 function readFormGoals() {
@@ -41,6 +39,10 @@ function readFormGoals() {
 }
 
 function populateGoals(goals) {
+  form.querySelectorAll("[data-goal]").forEach((editor) => {
+    editor.querySelectorAll("input, textarea").forEach((input) => { input.value = ""; });
+    editor.querySelector("[data-delete-goal]").hidden = true;
+  });
   goals.forEach((goal) => {
     const editor = form.querySelector(`[data-goal][data-lift="${goal.lift}"]`);
     if (!editor) return;
@@ -49,6 +51,7 @@ function populateGoals(goals) {
     editor.querySelector("[data-target-weight]").value = goal.targetWeightKg || "";
     editor.querySelector("[data-target-date]").value = goal.targetDate;
     editor.querySelector("[data-goal-notes]").value = goal.notes;
+    editor.querySelector("[data-delete-goal]").hidden = false;
   });
 }
 
@@ -147,6 +150,29 @@ async function initialize() {
     } finally {
       setBusy(false);
     }
+  });
+
+  form.querySelectorAll("[data-delete-goal]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const editor = button.closest("[data-goal]");
+      const goalId = editor.querySelector("[data-goal-id]").value;
+      if (!goalId || !window.confirm("確定刪除此訓練目標？此操作無法復原。")) return;
+      setBusy(true);
+      setStatus("正在刪除訓練目標…");
+      try {
+        const token = oauth.getValidAccessToken() ?? await oauth.requestAccessToken();
+        await deleteGoal(spreadsheet.id, token, goalId);
+        editor.querySelectorAll("input, textarea").forEach((input) => { input.value = ""; });
+        button.hidden = true;
+        window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "goals" } }));
+        setStatus("訓練目標已刪除。", "success");
+      } catch (error) {
+        console.error("Unable to delete goal.", error);
+        setStatus(describeError(error), "error");
+      } finally {
+        setBusy(false);
+      }
+    });
   });
 }
 

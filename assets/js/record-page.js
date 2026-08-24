@@ -3,6 +3,7 @@ import { googleAuth } from "./auth-service.js";
 import { appState } from "./app-state.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
+import { safeErrorMessage } from "./app-error.js";
 
 const form = document.querySelector("[data-record-form]");
 const exercisesOutput = document.querySelector("[data-exercises]");
@@ -88,10 +89,7 @@ function setStatus(message, state = "idle") {
 }
 
 function describeError(error) {
-  if (error?.name === "AbortError") return "授權已取消，表單內容仍保留，你可以再次儲存。";
-  if (error?.status === 401) return "Google 授權已過期，請再次儲存並重新授權。";
-  if (error?.status === 403) return "目前 Google 帳號沒有寫入這份試算表的權限。";
-  return error?.message || "無法儲存訓練紀錄，請稍後重試。";
+  return safeErrorMessage(error, "無法儲存訓練紀錄，請稍後重試。");
 }
 
 async function initialize() {

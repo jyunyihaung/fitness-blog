@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGoalUpsertRequests,
+  buildHeaderRepairData,
+  buildSettingUpsertRequests,
   buildWorkoutAppendRequests,
   buildWorkoutDeleteRequests,
   buildWorkoutReplaceRequests,
@@ -56,5 +58,32 @@ describe("Google Sheets request builders", () => {
     expect(requests[0].deleteDimension.range).toEqual(expect.objectContaining({ sheetId: 20, startIndex: 3 }));
     expect(requests[1].updateCells.range).toEqual(expect.objectContaining({ sheetId: 10, startRowIndex: 2 }));
     expect(requests[2].appendCells.rows[0].values.map((cell) => cell.userEnteredValue.stringValue)).toEqual(["s1", "80"]);
+  });
+
+  it("appends only missing schema headers without reordering existing columns", () => {
+    const rows = [
+      [["title", "session_id"]],
+      [["set_id", "session_id"]],
+      [["goal_id"]],
+      [["value", "key"]],
+      [["value", "key"]],
+      [["exercise_name", "exercise_id"]],
+    ];
+    const repairs = buildHeaderRepairData(rows);
+    expect(repairs[0].range).toBe("Sessions!C1");
+    expect(repairs[0].values[0]).not.toContain("session_id");
+    expect(repairs[3]).toEqual({ range: "Settings!C1", values: [["updated_at"]] });
+  });
+
+  it("updates existing settings by key and appends missing settings", () => {
+    const requests = buildSettingUpsertRequests(40, ["value", "key", "updated_at"], [
+      { rowIndex: 2, record: { key: "theme", value: "system" } },
+    ], [
+      { key: "theme", value: "dark", updated_at: "now" },
+      { key: "locale", value: "zh-TW", updated_at: "now" },
+    ]);
+    expect(requests[0].updateCells.range).toEqual(expect.objectContaining({ sheetId: 40, startRowIndex: 2 }));
+    expect(requests[0].updateCells.rows[0].values.map((cell) => cell.userEnteredValue.stringValue)).toEqual(["dark", "theme", "now"]);
+    expect(requests[1].appendCells.sheetId).toBe(40);
   });
 });

@@ -7,6 +7,7 @@ import { resolveReferenceOneRepMax } from "./one-rep-max.js";
 import { generateQuickAddDraft, getTrainingModeWarnings, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
+import { safeErrorMessage } from "./app-error.js";
 
 const liftOutput = document.querySelector("[data-lift-choices]");
 const modeOutput = document.querySelector("[data-mode-choices]");
@@ -199,12 +200,7 @@ async function saveWorkout() {
     window.location.hash = "/dashboard";
   } catch (error) {
     console.error("Unable to save Quick Add workout.", error);
-    const message = error?.name === "AbortError"
-      ? "授權已取消，訓練內容仍保留。"
-      : error?.status === 403
-        ? "目前 Google 帳號沒有寫入這份試算表的權限。"
-        : error?.message || "無法儲存訓練紀錄，請稍後重試。";
-    showSaveErrors([message]);
+    showSaveErrors([safeErrorMessage(error, "無法儲存訓練紀錄，請稍後重試。")]);
     saveStatus.textContent = "";
   } finally {
     saveButton.disabled = false;
@@ -243,9 +239,7 @@ async function generateWorkout() {
     renderPreview(generatedDraft, reference);
   } catch (error) {
     console.error("Unable to generate Quick Add workout.", error);
-    showError(error?.status === 403
-      ? "目前 Google 帳號沒有讀取這份試算表的權限。"
-      : error?.message || "無法產生訓練建議，請稍後重試。");
+    showError(safeErrorMessage(error, "無法產生訓練建議，請稍後重試。"));
   } finally {
     setBusy(false);
   }

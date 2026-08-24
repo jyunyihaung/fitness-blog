@@ -7,9 +7,15 @@ Tracker. The current Jekyll application remains deployable while the Vite and
 TypeScript client is introduced incrementally.
 
 The current Jekyll client now uses a single app shell and hash router for
-Dashboard, Add Record, Quick Add, and Goals. These routes share one memory-only
+Dashboard, Add Record, Quick Add, Records, Goals, and Settings. These routes share one memory-only
 `GoogleAuthService` instance and application state. The later Vite/TypeScript
 migration should preserve these runtime and security boundaries.
+
+The Settings route provides workbook-backed preferences, local connection
+removal, and an explicit additive schema repair. Repair may create missing
+version 1 sheets, append missing named headers, and initialize empty schema,
+settings, or exercise data. It never silently runs during selection and never
+renames, reorders, overwrites, or deletes existing user data.
 
 Quick Add is a draft producer in the business-logic layer. It resolves a
 reference 1RM from Goals and workout history, applies a centralized training
@@ -235,6 +241,10 @@ External errors are converted to a sanitized application error containing a
 stable code, user-safe message, retryability, and optional action. Raw API
 responses and credentials are never rendered. User-controlled text is assigned
 with text-safe DOM APIs, never interpolated through `innerHTML`.
+
+The current JavaScript client implements this boundary for Google authorization
+and Sheets API failures in `app-error.js`; the future TypeScript migration should
+extend the same typed contract across every layer.
 
 ## Deployment
 

@@ -50,10 +50,6 @@ export function validateGoals(goals) {
   const errors = [];
   const activeGoals = goals.filter((goal) => goal.targetWeightKg !== "");
   if (activeGoals.length === 0) errors.push("請至少設定一個目標重量。");
-  goals.filter((goal) => goal.id && goal.targetWeightKg === "").forEach((goal) => {
-    const label = GOAL_LABELS[goal.lift] ?? goal.lift;
-    errors.push(`${label}：目前尚未提供刪除功能，請保留目標重量。`);
-  });
   activeGoals.forEach((goal) => {
     const label = GOAL_LABELS[goal.lift] ?? goal.lift;
     if (!GOAL_LIFTS.includes(goal.lift)) errors.push(`${label}：項目無效。`);

@@ -1,4 +1,4 @@
-import { getSelectedSpreadsheet, saveSelectedSpreadsheet } from "./preferences.js";
+import { clearSelectedSpreadsheet, getSelectedSpreadsheet, saveSelectedSpreadsheet } from "./preferences.js";
 
 const state = {
   selectedSpreadsheet: getSelectedSpreadsheet(),
@@ -19,5 +19,9 @@ export const appState = {
   setSelectedSpreadsheet(spreadsheet) {
     saveSelectedSpreadsheet(spreadsheet);
     this.set("selectedSpreadsheet", spreadsheet);
+  },
+  clearSelectedSpreadsheet() {
+    clearSelectedSpreadsheet();
+    this.set("selectedSpreadsheet", null);
   },
 };
