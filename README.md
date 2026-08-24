@@ -9,6 +9,7 @@ deployment history.
 
 * Workout Log
 * Add workout records from desktop or mobile
+* Copy and paste versioned coach workout codes into Add Record
 * Generate editable workouts from a lift, training mode, and reference 1RM
 * Squat, bench press, and deadlift goals
 * Body Weight
@@ -128,6 +129,13 @@ After connecting a spreadsheet, open **新增紀錄** to add a training session 
 its exercise sets. The form validates values in the browser, requests a fresh
 Google access token from the save action, and appends the Session and Sets in one
 Sheets batch request. Tokens and workout form data are not persisted locally.
+
+The Add Record page can export the current workout as a `FITNESS-WORKOUT:1`
+text code or import a code pasted from a coach. Codes use UTF-8 Base64URL plus a
+short SHA-256 checksum so truncated or modified messages are rejected. Importing
+always opens a preview and replaces only the in-memory editor draft; the user
+must review and press Save before anything is written to Google Sheets. A code
+is not encrypted and should not contain sensitive personal information.
 
 Open **訓練目標** to load and update squat, bench press, and deadlift goals. Goal
 progress uses the explicitly stored current and target weights. The Dashboard

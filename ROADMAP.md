@@ -79,12 +79,14 @@ editor shares the Add Record exercise/set component and saves only sets marked
 completed through the existing Sessions/Sets pipeline. Record editing and
 deletion are available from the record list for connected, writable
 spreadsheets. Goal deletion and workbook-backed preferences are also available;
-typed migration remains pending.
+Add Record also supports versioned copy/paste coach workout codes with checksum
+validation and an import preview. Typed migration remains pending.
 
 - Welcome/setup flow implementing the two-button requirements and acceptance
   criteria in `ARCHITECTURE.md`.
 - Dashboard goal cards, latest workout, trend, and empty state.
 - Add Record nested exercise/set editor, preview, validation, and safe save.
+- Add Record coach-code export, copy/paste import, validation, and preview.
 - Record List grouped sessions, expansion, detail, and delete confirmation.
 - Settings spreadsheet controls, goals, and preferences.
 
