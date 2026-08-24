@@ -13,6 +13,8 @@ export function validateWorkoutInput(input) {
   const errors = [];
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.trainingDate)) errors.push("請選擇有效的訓練日期。");
   if (!input.title.trim()) errors.push("請輸入訓練名稱。");
+  if (input.title.length > 120) errors.push("訓練名稱不可超過 120 字。");
+  if (String(input.notes ?? "").length > 2000) errors.push("訓練說明不可超過 2000 字。");
 
   if (input.durationMinutes !== "" && (!Number.isInteger(Number(input.durationMinutes)) || Number(input.durationMinutes) < 1)) {
     errors.push("訓練時間必須是大於 0 的整數。");
@@ -25,6 +27,7 @@ export function validateWorkoutInput(input) {
   input.exercises.forEach((exercise, exerciseIndex) => {
     const label = `動作 ${exerciseIndex + 1}`;
     if (!exercise.name.trim()) errors.push(`${label}：請輸入動作名稱。`);
+    if (exercise.name.length > 120) errors.push(`${label}：名稱不可超過 120 字。`);
     if (!EXERCISE_CATEGORIES.has(exercise.category)) errors.push(`${label}：動作分類無效。`);
     if (!Array.isArray(exercise.sets) || exercise.sets.length === 0) {
       errors.push(`${label}：請至少新增一組。`);
@@ -43,6 +46,7 @@ export function validateWorkoutInput(input) {
         errors.push(`${setLabel}：RPE 必須介於 1–10，並以 0.5 為單位。`);
       }
       if (!SET_TYPES.has(set.type)) errors.push(`${setLabel}：組別類型無效。`);
+      if (String(set.notes ?? "").length > 500) errors.push(`${setLabel}：備註不可超過 500 字。`);
     });
   });
   return errors;
@@ -68,7 +72,7 @@ export function createWorkoutRecords(input) {
     title: input.title.trim(),
     body_weight_kg: "",
     duration_minutes: input.durationMinutes,
-    notes: "",
+    notes: String(input.notes ?? "").trim(),
     created_at: now,
     updated_at: now,
     schema_version: "1",

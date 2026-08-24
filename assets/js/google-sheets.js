@@ -369,6 +369,7 @@ export async function replaceWorkoutRecord(spreadsheetId, accessToken, sessionId
     training_date: record.session.training_date,
     title: record.session.title,
     duration_minutes: record.session.duration_minutes,
+    notes: record.session.notes,
     updated_at: now,
   };
   record.sets = record.sets.map((set) => ({ ...set, session_id: sessionId, updated_at: now }));

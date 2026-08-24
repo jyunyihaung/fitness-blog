@@ -52,6 +52,7 @@ function editDraft(workout) {
     trainingDate: workout.date,
     title: workout.workout,
     durationMinutes: workout.duration ? String(workout.duration) : "",
+    notes: workout.notes ?? "",
     exercises: workout.exercises.map((exercise) => ({
       name: exercise.name,
       category: exercise.category,

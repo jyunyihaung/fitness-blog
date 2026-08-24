@@ -1,0 +1,141 @@
+import { validateWorkoutInput } from "./record-validation.js";
+
+const FORMAT = "fitness-blog-workout-template";
+const VERSION = 1;
+const PREFIX = `FITNESS-WORKOUT:${VERSION}`;
+const MAX_INPUT_LENGTH = 100_000;
+const MAX_PAYLOAD_BYTES = 65_536;
+const MAX_EXERCISES = 30;
+const MAX_SETS_PER_EXERCISE = 30;
+const MAX_TOTAL_SETS = 200;
+
+export class WorkoutShareCodeError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "WorkoutShareCodeError";
+    this.code = code;
+  }
+}
+
+function fail(code, message) {
+  throw new WorkoutShareCodeError(code, message);
+}
+
+function sanitizeDraft(workout) {
+  return {
+    mode: "import",
+    trainingDate: String(workout.trainingDate ?? ""),
+    title: String(workout.title ?? ""),
+    durationMinutes: String(workout.durationMinutes ?? ""),
+    notes: String(workout.notes ?? ""),
+    exercises: Array.isArray(workout.exercises) ? workout.exercises.map((exercise) => ({
+      name: String(exercise?.name ?? ""),
+      category: String(exercise?.category ?? ""),
+      sets: Array.isArray(exercise?.sets) ? exercise.sets.map((set) => ({
+        weightKg: String(set?.weightKg ?? ""),
+        reps: String(set?.reps ?? ""),
+        rpe: String(set?.rpe ?? ""),
+        type: String(set?.type ?? ""),
+        isWarmup: set?.isWarmup === true,
+        notes: String(set?.notes ?? ""),
+      })) : [],
+    })) : [],
+  };
+}
+
+export function validateWorkoutTemplate(template) {
+  if (!template || typeof template !== "object" || Array.isArray(template)) fail("invalid_template", "課表內容格式無效。");
+  if (template.format !== FORMAT || template.version !== VERSION) fail("unsupported_version", "這份課表代碼不是目前支援的版本。");
+  if (!template.workout || typeof template.workout !== "object" || Array.isArray(template.workout)) fail("invalid_template", "課表缺少訓練內容。");
+  const draft = sanitizeDraft(template.workout);
+  if (draft.exercises.length > MAX_EXERCISES) fail("too_many_exercises", `一份課表最多包含 ${MAX_EXERCISES} 個動作。`);
+  if (draft.exercises.some((exercise) => exercise.sets.length > MAX_SETS_PER_EXERCISE)) fail("too_many_sets", `每個動作最多包含 ${MAX_SETS_PER_EXERCISE} 組。`);
+  const totalSets = draft.exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
+  if (totalSets > MAX_TOTAL_SETS) fail("too_many_sets", `一份課表最多包含 ${MAX_TOTAL_SETS} 組。`);
+  const errors = validateWorkoutInput(draft);
+  if (errors.length > 0) fail("invalid_workout", errors.join("\n"));
+  return draft;
+}
+
+export function createWorkoutTemplate(input, { displayName = "" } = {}) {
+  const workout = sanitizeDraft(input);
+  delete workout.mode;
+  const template = {
+    format: FORMAT,
+    version: VERSION,
+    exportedAt: new Date().toISOString(),
+    source: { type: "coach", displayName: String(displayName).trim().slice(0, 80) },
+    workout,
+  };
+  validateWorkoutTemplate(template);
+  return template;
+}
+
+function encodeBase64Url(text) {
+  const bytes = new TextEncoder().encode(text);
+  let binary = "";
+  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeBase64Url(payload) {
+  if (!/^[A-Za-z0-9_-]+$/.test(payload)) fail("invalid_encoding", "課表代碼的編碼內容無效。");
+  const base64 = payload.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(payload.length / 4) * 4, "=");
+  try {
+    const binary = atob(base64);
+    const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
+    if (bytes.byteLength > MAX_PAYLOAD_BYTES) fail("payload_too_large", "課表內容超過允許大小。");
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (error) {
+    if (error instanceof WorkoutShareCodeError) throw error;
+    fail("invalid_encoding", "課表代碼的編碼內容無效。");
+  }
+}
+
+async function checksum(payload) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(payload));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("").slice(0, 16);
+}
+
+export async function encodeWorkoutShareCode(template) {
+  validateWorkoutTemplate(template);
+  const json = JSON.stringify(template);
+  if (new TextEncoder().encode(json).byteLength > MAX_PAYLOAD_BYTES) fail("payload_too_large", "課表內容超過允許大小。");
+  const payload = encodeBase64Url(json);
+  return `${PREFIX}\n${payload}\n:CHECKSUM:${await checksum(payload)}\n:END`;
+}
+
+function extractShareCode(text) {
+  const input = String(text ?? "");
+  if (input.length > MAX_INPUT_LENGTH) fail("input_too_large", "貼上的文字超過允許大小。");
+  const pattern = /FITNESS-WORKOUT:(\d+)\s+([A-Za-z0-9_\s-]+?)\s+:CHECKSUM:([a-fA-F0-9]{16})\s+:END/g;
+  const matches = Array.from(input.matchAll(pattern));
+  if (matches.length === 0) fail("code_not_found", "找不到完整的 FITNESS-WORKOUT 課表代碼。");
+  if (matches.length > 1) fail("multiple_codes", "找到多份課表代碼，請一次只貼上一份。");
+  const [, version, rawPayload, expectedChecksum] = matches[0];
+  if (Number(version) !== VERSION) fail("unsupported_version", "這份課表代碼不是目前支援的版本。");
+  return { payload: rawPayload.replace(/\s/g, ""), expectedChecksum: expectedChecksum.toLowerCase() };
+}
+
+export async function decodeWorkoutShareCode(text) {
+  const { payload, expectedChecksum } = extractShareCode(text);
+  if (await checksum(payload) !== expectedChecksum) fail("checksum_mismatch", "課表代碼不完整或內容已被修改，請重新複製完整代碼。");
+  let template;
+  try {
+    template = JSON.parse(decodeBase64Url(payload));
+  } catch (error) {
+    if (error instanceof WorkoutShareCodeError) throw error;
+    fail("invalid_json", "課表代碼無法解析。");
+  }
+  const draft = validateWorkoutTemplate(template);
+  return {
+    template,
+    draft,
+    summary: {
+      displayName: String(template.source?.displayName ?? "").slice(0, 80),
+      exportedAt: String(template.exportedAt ?? ""),
+      exerciseCount: draft.exercises.length,
+      setCount: draft.exercises.reduce((total, exercise) => total + exercise.sets.length, 0),
+    },
+  };
+}

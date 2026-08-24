@@ -6,6 +6,7 @@ function validInput() {
     trainingDate: "2026-08-20",
     title: "  Squat day  ",
     durationMinutes: "5",
+    notes: "  Follow the coach plan.  ",
     exercises: [{
       name: "  Squat  ",
       category: "squat",
@@ -40,6 +41,7 @@ describe("workout record validation", () => {
     const records = createWorkoutRecords(validInput());
     expect(records.session.title).toBe("Squat day");
     expect(records.session.training_date).toBe("2026-08-20");
+    expect(records.session.notes).toBe("Follow the coach plan.");
     expect(records.sets).toHaveLength(2);
     expect(records.sets.every((set) => set.session_id === records.session.session_id)).toBe(true);
     expect(records.sets.map((set) => set.set_order)).toEqual(["1", "2"]);

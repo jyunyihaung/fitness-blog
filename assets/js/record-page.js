@@ -4,6 +4,7 @@ import { appState } from "./app-state.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 import { safeErrorMessage } from "./app-error.js";
+import { createWorkoutTemplate, decodeWorkoutShareCode, encodeWorkoutShareCode } from "./workout-share-code.js";
 
 const form = document.querySelector("[data-record-form]");
 const exercisesOutput = document.querySelector("[data-exercises]");
@@ -42,9 +43,13 @@ function populateDraft(draft) {
   form.elements.training_date.value = draft.trainingDate || localDateString();
   form.elements.title.value = draft.title ?? "";
   form.elements.duration_minutes.value = draft.durationMinutes ?? "5";
+  form.elements.notes.value = draft.notes ?? "";
   editor.load(draft.exercises ?? []);
   showValidation([]);
-  setStatus(editingSessionId ? "已載入訓練紀錄，你可以修改後儲存。" : "快速新增建議已載入，你可以修改後儲存。", "success");
+  const loadedMessage = draft.mode === "import"
+    ? "教練課表已匯入。你可以修改內容，確認後再手動儲存。"
+    : "快速新增建議已載入，你可以修改後儲存。";
+  setStatus(editingSessionId ? "已載入訓練紀錄，你可以修改後儲存。" : loadedMessage, "success");
 }
 
 function readInput() {
@@ -53,8 +58,168 @@ function readInput() {
     trainingDate: String(data.get("training_date") ?? ""),
     title: String(data.get("title") ?? ""),
     durationMinutes: String(data.get("duration_minutes") ?? ""),
+    notes: String(data.get("notes") ?? ""),
     exercises: editor.read(),
   };
+}
+
+function setDialogError(output, messages) {
+  output.replaceChildren();
+  output.hidden = messages.length === 0;
+  if (messages.length === 0) return;
+  const list = document.createElement("ul");
+  messages.forEach((message) => {
+    const item = document.createElement("li");
+    item.textContent = message;
+    list.append(item);
+  });
+  output.append(list);
+}
+
+function appendSummaryItem(root, label, value) {
+  const wrapper = document.createElement("div");
+  const term = document.createElement("dt");
+  const description = document.createElement("dd");
+  term.textContent = label;
+  description.textContent = value;
+  wrapper.append(term, description);
+  root.append(wrapper);
+}
+
+function hasMeaningfulDraft(input) {
+  if (input.title.trim() || input.notes.trim()) return true;
+  return input.exercises.some((exercise) => exercise.name.trim() || exercise.sets.some((set) => (
+    set.weightKg !== "0" || set.reps !== "1" || set.rpe !== "" || set.type !== "working" || set.isWarmup || set.notes.trim()
+  )));
+}
+
+function renderImportPreview(result) {
+  const summary = document.querySelector("[data-import-summary]");
+  const exercises = document.querySelector("[data-import-exercises]");
+  summary.replaceChildren();
+  exercises.replaceChildren();
+  appendSummaryItem(summary, "建立者", result.summary.displayName || "未提供");
+  const exportedAt = new Date(result.summary.exportedAt);
+  appendSummaryItem(summary, "匯出時間", Number.isNaN(exportedAt.getTime()) ? "未提供" : exportedAt.toLocaleString("zh-TW"));
+  appendSummaryItem(summary, "菜單", result.draft.title);
+  appendSummaryItem(summary, "訓練日期", result.draft.trainingDate);
+  appendSummaryItem(summary, "預估時間", result.draft.durationMinutes ? `${result.draft.durationMinutes} 分鐘` : "未提供");
+  appendSummaryItem(summary, "內容", `${result.summary.exerciseCount} 個動作／${result.summary.setCount} 組`);
+  result.draft.exercises.forEach((exercise) => {
+    const section = document.createElement("section");
+    section.className = "share-preview-exercise";
+    const heading = document.createElement("h3");
+    heading.textContent = exercise.name;
+    const list = document.createElement("ol");
+    exercise.sets.forEach((set) => {
+      const item = document.createElement("li");
+      const details = [`${set.weightKg} kg × ${set.reps}`, set.rpe ? `RPE ${set.rpe}` : "", set.type, set.notes].filter(Boolean);
+      item.textContent = details.join("｜");
+      list.append(item);
+    });
+    section.append(heading, list);
+    exercises.append(section);
+  });
+  if (result.draft.notes) {
+    const notes = document.createElement("p");
+    notes.className = "share-preview-notes";
+    notes.textContent = `訓練說明：${result.draft.notes}`;
+    exercises.append(notes);
+  }
+}
+
+function setupShareDialogs() {
+  const importDialog = document.querySelector("[data-import-dialog]");
+  const exportDialog = document.querySelector("[data-export-dialog]");
+  const importEntry = document.querySelector("[data-import-entry]");
+  const importPreview = document.querySelector("[data-import-preview]");
+  const importCode = document.querySelector("[data-import-code]");
+  const importError = document.querySelector("[data-import-error]");
+  const exportCode = document.querySelector("[data-export-code]");
+  const exportError = document.querySelector("[data-export-error]");
+  const copyButton = document.querySelector("[data-copy-export]");
+  const copyStatus = document.querySelector("[data-copy-status]");
+  let importedDraft = null;
+
+  importDialog.addEventListener("close", () => {
+    importCode.value = "";
+    importedDraft = null;
+  });
+  exportDialog.addEventListener("close", () => {
+    exportCode.value = "";
+    copyStatus.textContent = "";
+  });
+
+  document.querySelector("[data-open-import]").addEventListener("click", () => {
+    importEntry.hidden = false;
+    importPreview.hidden = true;
+    setDialogError(importError, []);
+    importDialog.showModal();
+    importCode.focus();
+  });
+  document.querySelectorAll("[data-close-import]").forEach((button) => button.addEventListener("click", () => importDialog.close()));
+  document.querySelector("[data-back-import]").addEventListener("click", () => {
+    importEntry.hidden = false;
+    importPreview.hidden = true;
+    importCode.focus();
+  });
+  document.querySelector("[data-parse-import]").addEventListener("click", async () => {
+    setDialogError(importError, []);
+    try {
+      const result = await decodeWorkoutShareCode(importCode.value);
+      importedDraft = result.draft;
+      renderImportPreview(result);
+      document.querySelector("[data-import-replace-warning]").hidden = !hasMeaningfulDraft(readInput());
+      importEntry.hidden = true;
+      importPreview.hidden = false;
+      document.querySelector("[data-apply-import]").focus();
+    } catch (error) {
+      setDialogError(importError, String(error?.message || "無法解析課表代碼。").split("\n"));
+    }
+  });
+  document.querySelector("[data-apply-import]").addEventListener("click", () => {
+    if (!importedDraft) return;
+    appState.set("recordDraft", importedDraft);
+    importCode.value = "";
+    importDialog.close();
+    pageTitle.focus({ preventScroll: true });
+  });
+
+  document.querySelector("[data-open-export]").addEventListener("click", () => {
+    exportCode.value = "";
+    copyButton.disabled = true;
+    copyStatus.textContent = "";
+    setDialogError(exportError, []);
+    exportDialog.showModal();
+    document.querySelector("[data-export-name]").focus();
+  });
+  document.querySelector("[data-close-export]").addEventListener("click", () => exportDialog.close());
+  document.querySelector("[data-generate-export]").addEventListener("click", async () => {
+    const input = readInput();
+    const errors = validateWorkoutInput(input);
+    setDialogError(exportError, errors);
+    if (errors.length > 0) return;
+    try {
+      const template = createWorkoutTemplate(input, { displayName: document.querySelector("[data-export-name]").value });
+      exportCode.value = await encodeWorkoutShareCode(template);
+      copyButton.disabled = false;
+      copyStatus.textContent = "課表代碼已產生。";
+    } catch (error) {
+      setDialogError(exportError, [error?.message || "無法產生課表代碼。"]);
+    }
+  });
+  copyButton.addEventListener("click", async () => {
+    if (!exportCode.value) return;
+    try {
+      await navigator.clipboard.writeText(exportCode.value);
+      copyStatus.textContent = "已複製課表代碼。";
+    } catch (_) {
+      exportCode.focus();
+      exportCode.select();
+      const copied = typeof document.execCommand === "function" && document.execCommand("copy");
+      copyStatus.textContent = copied ? "已複製課表代碼。" : "無法自動複製，已選取代碼，請手動複製。";
+    }
+  });
 }
 
 function showValidation(errors) {
@@ -101,6 +266,7 @@ async function initialize() {
   });
   editor.load();
   populateDraft(appState.get("recordDraft"));
+  setupShareDialogs();
   cancelLink.addEventListener("click", () => {
     if (editingSessionId) appState.set("recordDraft", null);
   });

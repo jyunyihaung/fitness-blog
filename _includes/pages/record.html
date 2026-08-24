@@ -22,6 +22,10 @@
           <span>訓練時間（分鐘）</span>
           <input type="number" name="duration_minutes" min="1" step="1" inputmode="numeric" value="5">
         </label>
+        <label class="field field-wide">
+          <span>訓練說明</span>
+          <textarea name="notes" rows="3" maxlength="2000" placeholder="例如：教練安排、當日目標或調整原則"></textarea>
+        </label>
       </div>
     </fieldset>
 
@@ -38,8 +42,61 @@
     <div class="validation-summary" data-validation-summary role="alert" hidden></div>
     <p class="save-status" data-save-status role="status" aria-live="polite"></p>
     <div class="form-actions">
-      <button class="button primary" type="submit" data-save-record>儲存訓練紀錄</button>
-      <a class="button button-link" href="#/dashboard" data-cancel-record>取消</a>
+      <div class="share-actions">
+        <button class="button" type="button" data-open-import>匯入課表</button>
+        <button class="button" type="button" data-open-export>匯出課表</button>
+      </div>
+      <div class="share-actions">
+        <button class="button primary" type="submit" data-save-record>儲存訓練紀錄</button>
+        <a class="button button-link" href="#/dashboard" data-cancel-record>取消</a>
+      </div>
     </div>
   </form>
+
+  <dialog class="share-dialog" data-import-dialog aria-labelledby="import-dialog-title">
+    <div class="share-dialog-content">
+      <div class="section-header">
+        <p class="eyebrow">Coach workout code</p>
+        <h2 id="import-dialog-title">匯入教練課表</h2>
+        <p class="section-lede">貼上完整的 FITNESS-WORKOUT 課表代碼。解析後只會載入草稿，不會寫入 Google Sheet。</p>
+      </div>
+      <div data-import-entry>
+        <label class="field"><span>課表代碼</span><textarea rows="10" data-import-code spellcheck="false" placeholder="FITNESS-WORKOUT:1&#10;...&#10;:END"></textarea></label>
+        <div class="validation-summary" data-import-error role="alert" hidden></div>
+        <div class="form-actions">
+          <button class="button primary" type="button" data-parse-import>解析並預覽</button>
+          <button class="button" type="button" data-close-import>取消</button>
+        </div>
+      </div>
+      <div class="share-preview" data-import-preview hidden>
+        <dl class="preview-details" data-import-summary></dl>
+        <div class="share-exercise-preview" data-import-exercises></div>
+        <p class="guidance-warning" data-import-replace-warning hidden>目前表單已有尚未儲存的內容，匯入後會取代目前表單，但不會修改 Google Sheet。</p>
+        <div class="form-actions">
+          <button class="button primary" type="button" data-apply-import>取代目前表單</button>
+          <button class="button" type="button" data-back-import>返回修改代碼</button>
+          <button class="button" type="button" data-close-import>取消</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog class="share-dialog" data-export-dialog aria-labelledby="export-dialog-title">
+    <div class="share-dialog-content">
+      <div class="section-header">
+        <p class="eyebrow">Coach workout code</p>
+        <h2 id="export-dialog-title">匯出課表</h2>
+        <p class="section-lede">產生可直接貼到聊天訊息的課表代碼。代碼不包含 Google 帳號、試算表 ID 或既有訓練資料。</p>
+      </div>
+      <label class="field"><span>教練／建立者名稱（選填）</span><input type="text" maxlength="80" data-export-name autocomplete="name"></label>
+      <label class="field"><span>課表代碼</span><textarea rows="10" data-export-code readonly spellcheck="false"></textarea></label>
+      <div class="validation-summary" data-export-error role="alert" hidden></div>
+      <p class="save-status" data-copy-status role="status" aria-live="polite"></p>
+      <div class="form-actions">
+        <button class="button primary" type="button" data-generate-export>產生課表代碼</button>
+        <button class="button" type="button" data-copy-export disabled>複製課表代碼</button>
+        <button class="button" type="button" data-close-export>關閉</button>
+      </div>
+    </div>
+  </dialog>
 </section>
