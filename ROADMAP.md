@@ -74,7 +74,8 @@ editable Add Record draft from the three competition lifts, six centralized
 training modes, and a resolved or manually entered reference 1RM. Its inline
 editor shares the Add Record exercise/set component and saves only sets marked
 completed through the existing Sessions/Sets pipeline. Record
-editing, deletion, goal deletion, and typed migration remain pending.
+goal deletion and typed migration remain pending. Record editing and deletion are
+available from the record list for connected, writable spreadsheets.
 
 - Welcome/setup flow implementing the two-button requirements and acceptance
   criteria in `ARCHITECTURE.md`.
