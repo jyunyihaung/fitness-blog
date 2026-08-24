@@ -25,12 +25,12 @@
         <span><strong>手動輸入最大重量</strong><small>直接使用你輸入的參考 1RM，不讀取或修改 Goals。</small></span>
       </label>
     </fieldset>
-    <div class="card manual-one-rm" data-manual-one-rm hidden>
+    <div class="card manual-one-rm" data-manual-one-rm data-active="false">
       <label class="field">
         <span>手動參考 1RM（kg）</span>
-        <input type="number" data-reference-one-rm min="0.5" step="0.5" inputmode="decimal">
+        <input type="number" data-reference-one-rm min="0.5" step="0.5" inputmode="decimal" placeholder="例如：150" disabled>
       </label>
-      <p>此值只用於產生本次建議，不會修改 Goals 或訓練紀錄。</p>
+      <p>選擇「手動輸入最大重量」後即可輸入。此值只用於產生本次建議，不會修改 Goals 或訓練紀錄。</p>
     </div>
   </section>
 

@@ -340,7 +340,8 @@ document.querySelector("[data-route-page='/quick-add']").addEventListener("click
 generateButton.addEventListener("click", generateWorkout);
 referenceModeInputs.forEach((input) => input.addEventListener("change", () => {
   const manual = selectedReferenceMode() === "manual";
-  manualPanel.hidden = !manual;
+  manualPanel.dataset.active = String(manual);
+  manualInput.disabled = !manual;
   preview.hidden = true;
   showError("");
   updateConnection();

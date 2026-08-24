@@ -570,6 +570,11 @@ code {
   color: var(--color-muted);
 }
 
+.manual-one-rm[data-active="false"] {
+  box-shadow: none;
+  opacity: 0.68;
+}
+
 .quick-generate-button {
   width: 100%;
   margin-top: var(--space-5);
