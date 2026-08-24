@@ -161,6 +161,13 @@ missing version 1 sheets, append missing headers, and initialize empty Settings,
 Schema, or Exercises data. It never removes, renames, reorders, or overwrites
 existing user columns and records.
 
+Settings also includes Exercise management. Users can search, add, rename,
+reclassify, deactivate, and reactivate exercise master records without changing
+historical Sets. Add Record and Quick Add suggest active exercises and copy the
+selected category. After a workout is saved, missing exercises are added and
+`last_used_at` is updated; failure to sync the exercise list does not roll back a
+successfully saved workout.
+
 ## Future
 
 * Nutrition

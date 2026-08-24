@@ -18,6 +18,8 @@ Implemented capabilities include:
 - Reading, creating, editing, and deleting Sessions/Sets records.
 - Reading, creating, updating, and deleting Goals.
 - Settings connection controls and workbook-backed preferences.
+- Exercise master-data search, suggestions, add/edit, activation controls,
+  normalized-name deduplication, and post-workout usage synchronization.
 - Browser-generated statistics, estimated 1RM, goal progress, and Chart.js
   charts.
 - Vitest coverage for pure domain functions and Google Sheets request builders.
@@ -33,7 +35,7 @@ stored in `localStorage`. Access tokens and workout records remain memory-only.
 | Quality tools | Vitest | Vitest, ESLint, typed build, integration tests |
 | Repository | Google Sheets functions | Typed repository contract plus in-memory implementation |
 | Errors | Stable safe client errors for external services | Typed errors throughout every layer |
-| Exercises | Default rows created and repaired | Deduplication and exercise management |
+| Exercises | Managed master data with normalized-name deduplication | Typed repository and broader conflict-recovery tests |
 | UI assurance | Responsive components and route focus | Full accessibility, keyboard, privacy, and mobile audit |
 
 ## Current risks

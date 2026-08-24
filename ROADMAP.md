@@ -59,9 +59,9 @@ states and neither credentials nor workout records are persisted locally.
 ## Phase 5 — Domain logic
 
 Status: in progress. Workout validation and conversion, named-header mapping,
-statistics, Goals validation/progress, estimated 1RM, and Sheets request builders
-now have automated tests. Exercise deduplication, broader edge cases, and full
-repository behavior remain pending.
+statistics, Goals validation/progress, estimated 1RM, Exercise normalization and
+deduplication, and Sheets request builders now have automated tests. Broader edge
+cases and full repository behavior remain pending.
 
 - Implement validation, volume, estimated 1RM, goal progress, grouping, exercise
   deduplication, and date sorting as pure functions.
@@ -84,6 +84,10 @@ validation and an import preview. Quick Add can export its edited suggestion and
 complete training-mode guidance through the same format, with an explicit choice
 between the current resolved maximum and a manually entered maximum. Typed
 migration remains pending.
+
+Settings now provides Exercise search, creation, editing, deactivation, and
+reactivation. Add Record and Quick Add share active Exercise suggestions and
+perform a best-effort master-list sync after workout persistence.
 
 - Welcome/setup flow implementing the two-button requirements and acceptance
   criteria in `ARCHITECTURE.md`.

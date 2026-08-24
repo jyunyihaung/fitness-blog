@@ -47,6 +47,15 @@ RPE range, rest interval, short tip, expandable details, and optional non-blocki
 divergence rule. Future squat, bench press, and deadlift technique cues can be
 added as a separate data source without changing training mode definitions.
 
+Exercises is a master-data list for future entry suggestions, not a foreign-key
+replacement for historical Sets. Names are normalized with Unicode NFKC,
+trimmed whitespace, collapsed internal whitespace, and case folding for
+deduplication. Renaming, reclassifying, or deactivating an Exercise affects only
+future suggestions; existing Sets retain their name and category snapshots.
+After the Sessions/Sets batch succeeds, a separate best-effort sync adds missing
+Exercises, reactivates used matches, and updates `last_used_at`. Sync failure is
+reported as a warning and never turns a successful workout write into failure.
+
 The product specification supersedes the original "Git is the database"
 assumption for training records. Google Sheets is the source of truth. Git
 continues to hold application source, documentation, and deployment history.
