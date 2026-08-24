@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { resolveReferenceOneRepMax } from "../assets/js/one-rep-max.js";
-import { generateQuickAddDraft, getTrainingModeWarnings, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
+import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "../assets/js/record-validation.js";
 
 function generate(modeId, referenceOneRepMax = 100) {
@@ -66,6 +66,21 @@ describe("Quick Add prescription generation", () => {
       "目前次數較高，訓練刺激可能逐漸偏向肌肥大或肌耐力。",
     ]);
     expect(validateWorkoutInput(strength)).toEqual([]);
+  });
+
+  it("exports every edited set with complete mode guidance regardless of completion state", () => {
+    const draft = generate("strength");
+    const exercises = draft.exercises.map((exercise) => ({
+      ...exercise,
+      sets: exercise.sets.map((set, index) => ({ ...set, completed: index === 0 })),
+    }));
+    const input = createQuickAddShareInput(draft, exercises, "75");
+    expect(input.exercises[0].sets).toHaveLength(4);
+    expect(input.exercises[0].sets[0]).not.toHaveProperty("completed");
+    expect(input.durationMinutes).toBe("75");
+    expect(input.notes).toContain("訓練目的：");
+    expect(input.notes).toContain("組間休息：");
+    expect(validateWorkoutInput(input)).toEqual([]);
   });
 });
 

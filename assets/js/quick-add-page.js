@@ -4,10 +4,11 @@ import { getWorkoutData } from "./data.js";
 import { parseGoals } from "./goals.js";
 import { appendWorkoutRecord, readRanges } from "./google-sheets.js";
 import { resolveReferenceOneRepMax } from "./one-rep-max.js";
-import { generateQuickAddDraft, getTrainingModeWarnings, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
+import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 import { safeErrorMessage } from "./app-error.js";
+import { createWorkoutTemplate, encodeWorkoutShareCode } from "./workout-share-code.js";
 
 const liftOutput = document.querySelector("[data-lift-choices]");
 const modeOutput = document.querySelector("[data-mode-choices]");
@@ -22,6 +23,7 @@ const saveButton = document.querySelector("[data-save-quick-workout]");
 const saveError = document.querySelector("[data-quick-save-error]");
 const saveStatus = document.querySelector("[data-quick-save-status]");
 const durationInput = document.querySelector("[data-quick-duration]");
+const exportButton = document.querySelector("[data-export-quick-workout]");
 const guidance = document.querySelector("[data-training-guidance]");
 const warningOutput = document.querySelector("[data-training-warning]");
 const editor = createWorkoutEditor(quickExercises, { completionEnabled: true });
@@ -174,6 +176,69 @@ function showSaveErrors(errors) {
   saveError.hidden = false;
 }
 
+function setQuickExportErrors(output, errors) {
+  output.replaceChildren();
+  output.hidden = errors.length === 0;
+  if (errors.length === 0) return;
+  const list = document.createElement("ul");
+  errors.forEach((message) => {
+    const item = document.createElement("li");
+    item.textContent = message;
+    list.append(item);
+  });
+  output.append(list);
+}
+
+function setupQuickExport() {
+  const dialog = document.querySelector("[data-quick-export-dialog]");
+  const nameInput = document.querySelector("[data-quick-export-name]");
+  const codeOutput = document.querySelector("[data-quick-export-code]");
+  const errorOutput = document.querySelector("[data-quick-export-error]");
+  const copyButton = document.querySelector("[data-copy-quick-export]");
+  const copyStatus = document.querySelector("[data-quick-copy-status]");
+
+  exportButton.addEventListener("click", () => {
+    if (!generatedDraft) return showSaveErrors(["請先產生訓練建議。"]);
+    codeOutput.value = "";
+    copyButton.disabled = true;
+    copyStatus.textContent = "";
+    setQuickExportErrors(errorOutput, []);
+    dialog.showModal();
+    nameInput.focus();
+  });
+  document.querySelector("[data-close-quick-export]").addEventListener("click", () => dialog.close());
+  dialog.addEventListener("close", () => {
+    codeOutput.value = "";
+    copyStatus.textContent = "";
+  });
+  document.querySelector("[data-generate-quick-export]").addEventListener("click", async () => {
+    const input = createQuickAddShareInput(generatedDraft, editor.read(), durationInput.value);
+    const errors = validateWorkoutInput(input);
+    setQuickExportErrors(errorOutput, errors);
+    if (errors.length > 0) return;
+    try {
+      const template = createWorkoutTemplate(input, { displayName: nameInput.value });
+      codeOutput.value = await encodeWorkoutShareCode(template);
+      copyButton.disabled = false;
+      copyStatus.textContent = "課表代碼已產生。";
+    } catch (error) {
+      setQuickExportErrors(errorOutput, [error?.message || "無法產生課表代碼。"]);
+    }
+  });
+  copyButton.addEventListener("click", async () => {
+    if (!codeOutput.value) return;
+    try {
+      await navigator.clipboard.writeText(codeOutput.value);
+      copyStatus.textContent = "已複製課表代碼。";
+    } catch (_) {
+      codeOutput.focus();
+      codeOutput.select();
+      const copied = typeof document.execCommand === "function" && document.execCommand("copy");
+      copyStatus.textContent = copied ? "已複製課表代碼。" : "無法自動複製，已選取代碼，請手動複製。";
+    }
+  });
+}
+
 async function saveWorkout() {
   const spreadsheet = appState.get("selectedSpreadsheet");
   if (!spreadsheet?.id) return showSaveErrors(["尚未選擇 Google Sheet，請先回到 Dashboard 完成連線。"]);
@@ -190,6 +255,7 @@ async function saveWorkout() {
   if (errors.length) return;
 
   saveButton.disabled = true;
+  exportButton.disabled = true;
   saveStatus.textContent = "正在要求 Google 授權…";
   try {
     const accessToken = await googleAuth.getAccessToken();
@@ -204,6 +270,7 @@ async function saveWorkout() {
     saveStatus.textContent = "";
   } finally {
     saveButton.disabled = false;
+    exportButton.disabled = false;
   }
 }
 
@@ -264,6 +331,7 @@ document.querySelector("[data-quick-add-exercise]").addEventListener("click", ()
   exercise.querySelector("[data-exercise-name]").focus();
 });
 saveButton.addEventListener("click", saveWorkout);
+setupQuickExport();
 quickExercises.addEventListener("input", updateTrainingWarning);
 quickExercises.addEventListener("change", updateTrainingWarning);
 quickExercises.addEventListener("click", () => queueMicrotask(updateTrainingWarning));

@@ -137,6 +137,12 @@ always opens a preview and replaces only the in-memory editor draft; the user
 must review and press Save before anything is written to Google Sheets. A code
 is not encrypted and should not contain sensitive personal information.
 
+After Quick Add generates a suggestion, **匯出課表** exports every set currently
+shown in its editable workout editor together with the selected mode's goal,
+RPE guidance, rest interval, technique tips, and any divergence warning. Export
+does not depend on the completed-set checkboxes; those checkboxes continue to
+control only which sets are saved as a completed workout.
+
 Open **訓練目標** to load and update squat, bench press, and deadlift goals. Goal
 progress uses the explicitly stored current and target weights. The Dashboard
 also shows an estimated 1RM calculated from recorded sets without overwriting

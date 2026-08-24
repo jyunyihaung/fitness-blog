@@ -121,6 +121,41 @@ export function getTrainingModeWarnings(modeId, exercises, referenceOneRepMax) {
   return hasHighReps || hasStrengthBias ? [warning.message] : [];
 }
 
+export function createQuickAddShareInput(draft, exercises, durationMinutes) {
+  const mode = TRAINING_MODES[draft?.quickAdd?.modeId];
+  if (!mode) throw new Error("請先產生有效的訓練建議。");
+  const cleanExercises = (exercises ?? []).map((exercise) => ({
+    name: exercise.name,
+    category: exercise.category,
+    sets: (exercise.sets ?? []).map((set) => ({
+      weightKg: set.weightKg,
+      reps: set.reps,
+      rpe: set.rpe,
+      type: set.type,
+      isWarmup: set.isWarmup,
+      notes: set.notes,
+    })),
+  }));
+  const warnings = getTrainingModeWarnings(draft.quickAdd.modeId, cleanExercises, draft.quickAdd.referenceOneRepMax);
+  const rpe = mode.rpeRange[0] === 0 ? `RPE ≤ ${mode.rpeRange[1]}` : `RPE ${mode.rpeRange.join("–")}`;
+  const notes = [
+    `訓練模式：${mode.englishLabel} / ${mode.label}`,
+    `訓練目的：${mode.goal}`,
+    `目標強度：${rpe}`,
+    `組間休息：${mode.rest}`,
+    `動作要點：${mode.shortTip}`,
+    ...mode.tips.map((tip) => `・${tip}`),
+    ...warnings.map((warning) => `目前設定提醒：${warning}`),
+  ].join("\n");
+  return {
+    trainingDate: draft.trainingDate,
+    title: draft.title,
+    durationMinutes: String(durationMinutes ?? draft.durationMinutes ?? ""),
+    notes,
+    exercises: cleanExercises,
+  };
+}
+
 export function roundWeight(weight, increment = 0.5) {
   const number = Number(weight);
   const step = Number(increment);

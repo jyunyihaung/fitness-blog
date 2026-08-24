@@ -80,7 +80,9 @@ completed through the existing Sessions/Sets pipeline. Record editing and
 deletion are available from the record list for connected, writable
 spreadsheets. Goal deletion and workbook-backed preferences are also available;
 Add Record also supports versioned copy/paste coach workout codes with checksum
-validation and an import preview. Typed migration remains pending.
+validation and an import preview. Quick Add can export its edited suggestion and
+complete training-mode guidance through the same format. Typed migration remains
+pending.
 
 - Welcome/setup flow implementing the two-button requirements and acceptance
   criteria in `ARCHITECTURE.md`.

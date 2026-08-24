@@ -94,6 +94,28 @@
     <div class="validation-summary" data-quick-save-error role="alert" hidden></div>
     <div class="guidance-warning" data-training-warning role="status" hidden></div>
     <p class="save-status" data-quick-save-status role="status" aria-live="polite"></p>
-    <button class="button primary quick-save-button" type="button" data-save-quick-workout>儲存訓練紀錄</button>
+    <div class="form-actions">
+      <button class="button primary quick-save-button" type="button" data-save-quick-workout>儲存訓練紀錄</button>
+      <button class="button" type="button" data-export-quick-workout>匯出課表</button>
+    </div>
   </section>
+
+  <dialog class="share-dialog" data-quick-export-dialog aria-labelledby="quick-export-dialog-title">
+    <div class="share-dialog-content">
+      <div class="section-header">
+        <p class="eyebrow">Coach workout code</p>
+        <h2 id="quick-export-dialog-title">匯出快速新增課表</h2>
+        <p class="section-lede">代碼包含目前編輯器內的全部組數與訓練模式提示，不受「完成」勾選狀態影響。</p>
+      </div>
+      <label class="field"><span>教練／建立者名稱（選填）</span><input type="text" maxlength="80" data-quick-export-name autocomplete="name"></label>
+      <label class="field"><span>課表代碼</span><textarea rows="10" data-quick-export-code readonly spellcheck="false"></textarea></label>
+      <div class="validation-summary" data-quick-export-error role="alert" hidden></div>
+      <p class="save-status" data-quick-copy-status role="status" aria-live="polite"></p>
+      <div class="form-actions">
+        <button class="button primary" type="button" data-generate-quick-export>產生課表代碼</button>
+        <button class="button" type="button" data-copy-quick-export disabled>複製課表代碼</button>
+        <button class="button" type="button" data-close-quick-export>關閉</button>
+      </div>
+    </div>
+  </dialog>
 </section>
