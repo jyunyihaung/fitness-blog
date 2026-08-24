@@ -1,6 +1,8 @@
 import { getWorkoutData } from "./data.js";
 import { googleAuth } from "./auth-service.js";
 import { getSelectedSpreadsheet } from "./preferences.js";
+import { appState } from "./app-state.js";
+import { deleteWorkoutRecord } from "./google-sheets.js";
 
 function appendText(parent, tagName, className, text) {
   const element = document.createElement(tagName);
@@ -42,9 +44,33 @@ function renderExercise(exercise) {
   return section;
 }
 
-function renderSession(workout) {
+function editDraft(workout) {
+  return {
+    mode: "edit",
+    sessionId: workout.id,
+    trainingDate: workout.date,
+    title: workout.workout,
+    durationMinutes: workout.duration ? String(workout.duration) : "",
+    exercises: workout.exercises.map((exercise) => ({
+      name: exercise.name,
+      category: exercise.category,
+      sets: exercise.sets.map((set) => ({
+        weightKg: String(set.weight),
+        reps: String(set.reps),
+        rpe: set.rpe === null ? "" : String(set.rpe),
+        type: set.type,
+        isWarmup: set.isWarmup,
+        notes: set.notes,
+      })),
+    })),
+  };
+}
+
+function renderSession(workout, editable) {
+  const article = document.createElement("article");
+  article.className = "card record-session";
   const details = document.createElement("details");
-  details.className = "card record-session";
+  details.className = "record-session-details";
   const summary = document.createElement("summary");
   summary.className = "record-session-summary";
 
@@ -64,7 +90,40 @@ function renderSession(workout) {
     workout.exercises.forEach((exercise) => body.append(renderExercise(exercise)));
   }
   details.append(body);
-  return details;
+  article.append(details);
+
+  if (editable) {
+    const actions = document.createElement("div");
+    actions.className = "record-session-actions";
+    const edit = appendText(actions, "button", "button compact-button", "編輯");
+    edit.type = "button";
+    edit.addEventListener("click", () => {
+      appState.set("recordDraft", editDraft(workout));
+      window.location.hash = "/record/new";
+    });
+    const remove = appendText(actions, "button", "button compact-button danger-button", "刪除");
+    remove.type = "button";
+    remove.addEventListener("click", async () => {
+      const setCount = workout.exercises.reduce((total, exercise) => total + exercise.sets.length, 0);
+      if (!window.confirm(`確定刪除「${workout.workout}」？這會同時刪除 ${setCount} 組訓練資料，且無法復原。`)) return;
+      remove.disabled = true;
+      edit.disabled = true;
+      setStatus("正在刪除訓練紀錄…", "loading");
+      try {
+        const selected = getSelectedSpreadsheet();
+        const accessToken = await googleAuth.getAccessToken();
+        await deleteWorkoutRecord(selected.id, accessToken, workout.id);
+        window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "records" } }));
+      } catch (error) {
+        console.error("Unable to delete workout record.", error);
+        setStatus(describeError(error), "error");
+        remove.disabled = false;
+        edit.disabled = false;
+      }
+    });
+    article.append(actions);
+  }
+  return article;
 }
 
 function describeError(error) {
@@ -91,7 +150,11 @@ function renderRecords(workouts) {
     return;
   }
   status.hidden = true;
-  workouts.forEach((workout) => output.append(renderSession(workout)));
+  const editable = Boolean(
+    getSelectedSpreadsheet()?.id
+    && window.FitnessConfig?.googleSheets?.oauthClientId?.trim(),
+  );
+  workouts.forEach((workout) => output.append(renderSession(workout, editable)));
 }
 
 async function loadRecords() {

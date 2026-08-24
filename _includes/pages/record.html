@@ -2,7 +2,7 @@
   <div class="section-header">
     <p class="eyebrow">Training record</p>
     <h1 id="record-title" tabindex="-1">新增訓練紀錄</h1>
-    <p class="section-lede">記錄本次訓練、動作與每一組內容，資料會直接寫入已連接的 Google Sheet。</p>
+    <p class="section-lede" data-record-lede>記錄本次訓練、動作與每一組內容，資料會直接寫入已連接的 Google Sheet。</p>
   </div>
 
   <div class="empty-state" data-connection-message hidden></div>
@@ -39,7 +39,7 @@
     <p class="save-status" data-save-status role="status" aria-live="polite"></p>
     <div class="form-actions">
       <button class="button primary" type="submit" data-save-record>儲存訓練紀錄</button>
-      <a class="button button-link" href="#/dashboard">取消</a>
+      <a class="button button-link" href="#/dashboard" data-cancel-record>取消</a>
     </div>
   </form>
 </section>

@@ -19,19 +19,32 @@
 }
 
 .record-session {
+  position: relative;
   padding: 0;
   overflow: hidden;
+}
+
+.record-session-details {
+  min-width: 0;
 }
 
 .record-session-summary {
   display: flex;
   min-height: 5rem;
-  padding: var(--space-4) var(--space-5);
+  padding: var(--space-4) 14rem var(--space-4) var(--space-5);
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
   cursor: pointer;
   list-style-position: inside;
+}
+
+.record-session-actions {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-4);
+  display: flex;
+  gap: var(--space-2);
 }
 
 .record-session-summary > div {
@@ -116,11 +129,17 @@
 @media (max-width: 42rem) {
   .record-session-summary {
     min-height: 4.5rem;
-    padding: var(--space-4);
+    padding: var(--space-4) 11rem var(--space-4) var(--space-4);
     align-items: flex-start;
   }
 
+
+  .record-session-actions {
+    right: var(--space-3);
+  }
+
   .record-session-count {
+    display: none;
     font-size: 0.8125rem;
     white-space: nowrap;
   }

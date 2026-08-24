@@ -1,4 +1,4 @@
-import { appendWorkoutRecord } from "./google-sheets.js";
+import { appendWorkoutRecord, replaceWorkoutRecord } from "./google-sheets.js";
 import { googleAuth } from "./auth-service.js";
 import { appState } from "./app-state.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
@@ -9,6 +9,23 @@ const exercisesOutput = document.querySelector("[data-exercises]");
 const validationSummary = document.querySelector("[data-validation-summary]");
 const saveStatus = document.querySelector("[data-save-status]");
 const saveButton = document.querySelector("[data-save-record]");
+const pageTitle = document.querySelector("#record-title");
+const pageLede = document.querySelector("[data-record-lede]");
+const cancelLink = document.querySelector("[data-cancel-record]");
+const routePage = form.closest("[data-route-page]");
+let editingSessionId = null;
+
+function setEditMode(sessionId = null) {
+  editingSessionId = sessionId;
+  const editing = Boolean(editingSessionId);
+  pageTitle.textContent = editing ? "編輯訓練紀錄" : "新增訓練紀錄";
+  pageLede.textContent = editing
+    ? "修改本次訓練、動作與組數，儲存後會更新已連接的 Google Sheet。"
+    : "記錄本次訓練、動作與每一組內容，資料會直接寫入已連接的 Google Sheet。";
+  saveButton.textContent = editing ? "儲存修改" : "儲存訓練紀錄";
+  cancelLink.href = editing ? "#/records" : "#/dashboard";
+  if (routePage) routePage.dataset.routeTitle = editing ? "編輯訓練紀錄" : "新增訓練紀錄";
+}
 
 function localDateString() {
   const now = new Date();
@@ -20,12 +37,13 @@ const editor = createWorkoutEditor(exercisesOutput);
 
 function populateDraft(draft) {
   if (!draft) return;
+  setEditMode(draft.mode === "edit" ? draft.sessionId : null);
   form.elements.training_date.value = draft.trainingDate || localDateString();
   form.elements.title.value = draft.title ?? "";
   form.elements.duration_minutes.value = draft.durationMinutes ?? "5";
   editor.load(draft.exercises ?? []);
   showValidation([]);
-  setStatus("快速新增建議已載入，你可以修改後儲存。", "success");
+  setStatus(editingSessionId ? "已載入訓練紀錄，你可以修改後儲存。" : "快速新增建議已載入，你可以修改後儲存。", "success");
 }
 
 function readInput() {
@@ -77,6 +95,7 @@ function describeError(error) {
 }
 
 async function initialize() {
+  setEditMode();
   form.elements.training_date.value = localDateString();
   document.querySelector("[data-add-exercise]").addEventListener("click", () => {
     const exercise = editor.addExercise();
@@ -84,6 +103,9 @@ async function initialize() {
   });
   editor.load();
   populateDraft(appState.get("recordDraft"));
+  cancelLink.addEventListener("click", () => {
+    if (editingSessionId) appState.set("recordDraft", null);
+  });
 
   let selectedSpreadsheet = appState.get("selectedSpreadsheet");
   const connectionMessage = document.querySelector("[data-connection-message]");
@@ -102,6 +124,12 @@ async function initialize() {
       updateConnection();
     }
     if (event.detail.key === "recordDraft" && event.detail.value) populateDraft(event.detail.value);
+  });
+  window.addEventListener("fitness:route-change", (event) => {
+    if (event.detail.route !== "/record/new" && editingSessionId) {
+      setEditMode();
+      appState.set("recordDraft", null);
+    }
   });
 
   const clientId = window.FitnessConfig?.googleSheets?.oauthClientId?.trim();
@@ -139,15 +167,13 @@ async function initialize() {
     try {
       const accessToken = await oauth.getAccessToken();
       setStatus("正在寫入 Google Sheet…");
-      await appendWorkoutRecord(
-        selectedSpreadsheet.id,
-        accessToken,
-        createWorkoutRecords(input),
-      );
+      const record = createWorkoutRecords(input);
+      if (editingSessionId) await replaceWorkoutRecord(selectedSpreadsheet.id, accessToken, editingSessionId, record);
+      else await appendWorkoutRecord(selectedSpreadsheet.id, accessToken, record);
       appState.set("recordDraft", null);
       window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "record" } }));
-      setStatus("訓練紀錄已儲存，正在返回 Dashboard。", "success");
-      window.location.hash = "/dashboard";
+      setStatus(editingSessionId ? "訓練紀錄已更新，正在返回紀錄列表。" : "訓練紀錄已儲存，正在返回 Dashboard。", "success");
+      window.location.hash = editingSessionId ? "/records" : "/dashboard";
     } catch (error) {
       console.error("Unable to save workout record.", error);
       setStatus(describeError(error), error?.name === "AbortError" ? "idle" : "error");

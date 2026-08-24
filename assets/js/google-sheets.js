@@ -197,6 +197,119 @@ export async function appendWorkoutRecord(spreadsheetId, accessToken, record) {
   return { sessionId: record.session.session_id };
 }
 
+function sheetRowRecords(rows) {
+  const headers = (rows[0] ?? []).map((header) => String(header).trim());
+  return {
+    headers,
+    rows: rows.slice(1).map((values, index) => ({
+      rowIndex: index + 1,
+      record: Object.fromEntries(headers.map((header, columnIndex) => [header, String(values[columnIndex] ?? "").trim()])),
+    })),
+  };
+}
+
+export function buildWorkoutDeleteRequests(sheetIds, sessionRowIndex, setRowIndices) {
+  const deleteRow = (sheetId, rowIndex) => ({
+    deleteDimension: {
+      range: { sheetId, dimension: "ROWS", startIndex: rowIndex, endIndex: rowIndex + 1 },
+    },
+  });
+  return [
+    ...[...setRowIndices].sort((left, right) => right - left)
+      .map((rowIndex) => deleteRow(sheetIds.get("Sets"), rowIndex)),
+    deleteRow(sheetIds.get("Sessions"), sessionRowIndex),
+  ];
+}
+
+export function buildWorkoutReplaceRequests(sheetIds, sessionHeaders, setHeaders, sessionRowIndex, setRowIndices, record) {
+  return [
+    ...[...setRowIndices].sort((left, right) => right - left).map((rowIndex) => ({
+      deleteDimension: {
+        range: { sheetId: sheetIds.get("Sets"), dimension: "ROWS", startIndex: rowIndex, endIndex: rowIndex + 1 },
+      },
+    })),
+    {
+      updateCells: {
+        range: {
+          sheetId: sheetIds.get("Sessions"),
+          startRowIndex: sessionRowIndex,
+          endRowIndex: sessionRowIndex + 1,
+          startColumnIndex: 0,
+          endColumnIndex: sessionHeaders.length,
+        },
+        rows: [toAppendRow(sessionHeaders, record.session)],
+        fields: "userEnteredValue",
+      },
+    },
+    {
+      appendCells: {
+        sheetId: sheetIds.get("Sets"),
+        rows: record.sets.map((set) => toAppendRow(setHeaders, set)),
+        fields: "userEnteredValue",
+      },
+    },
+  ];
+}
+
+async function workoutMutationContext(spreadsheetId, accessToken) {
+  const fields = encodeURIComponent("sheets.properties(sheetId,title)");
+  const [metadata, valuesByRange] = await Promise.all([
+    apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}?fields=${fields}`, accessToken),
+    readRanges(spreadsheetId, accessToken, ["Sessions", "Sets"]),
+  ]);
+  const sheetIds = new Map(metadata.sheets?.map((sheet) => [sheet.properties?.title, sheet.properties?.sheetId]));
+  const sessions = sheetRowRecords(valuesByRange[0] ?? []);
+  const sets = sheetRowRecords(valuesByRange[1] ?? []);
+  for (const [title, data] of [["Sessions", sessions], ["Sets", sets]]) {
+    if (!Number.isInteger(sheetIds.get(title))) throw new Error(`Missing required sheet: ${title}.`);
+    const missing = HEADERS[title].filter((header) => !data.headers.includes(header));
+    if (missing.length > 0) throw new Error(`${title} is missing required columns: ${missing.join(", ")}.`);
+  }
+  return { sheetIds, sessions, sets };
+}
+
+export async function deleteWorkoutRecord(spreadsheetId, accessToken, sessionId) {
+  const context = await workoutMutationContext(spreadsheetId, accessToken);
+  const session = context.sessions.rows.find((row) => row.record.session_id === sessionId);
+  if (!session) throw new Error("找不到要刪除的訓練紀錄，資料可能已被修改。");
+  const setRows = context.sets.rows.filter((row) => row.record.session_id === sessionId).map((row) => row.rowIndex);
+  const requests = buildWorkoutDeleteRequests(context.sheetIds, session.rowIndex, setRows);
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests }),
+  });
+}
+
+export async function replaceWorkoutRecord(spreadsheetId, accessToken, sessionId, record) {
+  const context = await workoutMutationContext(spreadsheetId, accessToken);
+  const session = context.sessions.rows.find((row) => row.record.session_id === sessionId);
+  if (!session) throw new Error("找不到要編輯的訓練紀錄，資料可能已被修改。");
+  const now = new Date().toISOString();
+  record.session = {
+    ...session.record,
+    session_id: sessionId,
+    training_date: record.session.training_date,
+    title: record.session.title,
+    duration_minutes: record.session.duration_minutes,
+    updated_at: now,
+  };
+  record.sets = record.sets.map((set) => ({ ...set, session_id: sessionId, updated_at: now }));
+  const setRows = context.sets.rows.filter((row) => row.record.session_id === sessionId).map((row) => row.rowIndex);
+  const requests = buildWorkoutReplaceRequests(
+    context.sheetIds,
+    context.sessions.headers,
+    context.sets.headers,
+    session.rowIndex,
+    setRows,
+    record,
+  );
+  await apiRequest(`${API_BASE}/${encodeURIComponent(spreadsheetId)}:batchUpdate`, accessToken, {
+    method: "POST",
+    body: JSON.stringify({ requests }),
+  });
+  return { sessionId };
+}
+
 export async function upsertGoals(spreadsheetId, accessToken, goals) {
   const fields = encodeURIComponent("sheets.properties(sheetId,title)");
   const [metadata, valuesByRange] = await Promise.all([
