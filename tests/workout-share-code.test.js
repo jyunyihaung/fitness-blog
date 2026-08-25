@@ -44,6 +44,15 @@ describe("workout share codes", () => {
     expect((await decodeWorkoutShareCode(transported)).draft.title).toBe("深蹲強度日");
   });
 
+  it("decodes a URL-encoded legacy code pasted from mobile Safari", async () => {
+    const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout));
+    const [, payload, checksum] = code.match(/^FITNESS-WORKOUT:1:([^:]+):CHECKSUM:([a-f0-9]{16}):END$/);
+    const legacyCode = `FITNESS-WORKOUT:1\n${payload}\n:CHECKSUM:${checksum}\n:END`;
+    const transported = encodeURIComponent(legacyCode);
+    expect(transported).toContain("%0A%3ACHECKSUM%3A");
+    expect((await decodeWorkoutShareCode(transported)).draft.title).toBe("深蹲強度日");
+  });
+
   it("rejects modified payloads using the checksum", async () => {
     const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout));
     const modified = code.replace(/^(FITNESS-WORKOUT:1:)([A-Za-z0-9_-])/, (_, prefix, character) => `${prefix}${character === "A" ? "B" : "A"}`);

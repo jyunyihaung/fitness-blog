@@ -107,7 +107,17 @@ export async function encodeWorkoutShareCode(template) {
 }
 
 function extractShareCode(text) {
-  const input = String(text ?? "");
+  const rawInput = String(text ?? "");
+  if (rawInput.length > MAX_INPUT_LENGTH) fail("input_too_large", "貼上的文字超過允許大小。");
+  let input = rawInput;
+  if (/%[a-fA-F0-9]{2}/.test(rawInput)) {
+    try {
+      input = decodeURIComponent(rawInput);
+    } catch (_) {
+      const transportCharacters = { "09": "\t", "0a": "\n", "0d": "\r", "20": " ", "3a": ":" };
+      input = rawInput.replace(/%(09|0A|0D|20|3A)/gi, (_, hex) => transportCharacters[hex.toLowerCase()]);
+    }
+  }
   if (input.length > MAX_INPUT_LENGTH) fail("input_too_large", "貼上的文字超過允許大小。");
   const pattern = /FITNESS-WORKOUT:(\d+)(?::|[\s\u200B\u200C\u200D\u2060\uFEFF]+)([A-Za-z0-9_\s\u200B\u200C\u200D\u2060\uFEFF-]+?)[\s\u200B\u200C\u200D\u2060\uFEFF]*:CHECKSUM:[\s\u200B\u200C\u200D\u2060\uFEFF]*([a-fA-F0-9]{16})[\s\u200B\u200C\u200D\u2060\uFEFF]*:END/g;
   const matches = Array.from(input.matchAll(pattern));

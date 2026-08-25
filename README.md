@@ -135,6 +135,7 @@ text code or import a code pasted from a coach. Codes use UTF-8 Base64URL plus a
 short SHA-256 checksum so truncated or modified messages are rejected. Newly
 exported codes are a single line to survive copy-and-paste transports; importing
 also accepts legacy multiline codes and ignores common invisible whitespace.
+URL-encoded codes produced by some mobile copy-and-paste flows are normalized too.
 Importing always opens a preview and replaces only the in-memory editor draft; the user
 must review and press Save before anything is written to Google Sheets. A code
 is not encrypted and should not contain sensitive personal information.
