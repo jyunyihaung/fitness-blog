@@ -921,6 +921,13 @@ code {
   overflow-wrap: anywhere;
 }
 
+.share-dialog textarea[readonly] {
+  overflow-x: auto;
+  overflow-wrap: normal;
+  white-space: pre;
+  word-break: normal;
+}
+
 .share-preview-exercise {
   padding: var(--space-4);
   border-radius: var(--radius-sm);

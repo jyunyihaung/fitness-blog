@@ -35,7 +35,9 @@ normal authenticated repository pipeline.
 
 Coach workout sharing is another draft producer. The Add Record page converts a
 validated workout into a versioned `FITNESS-WORKOUT:1` text code using UTF-8
-Base64URL and a SHA-256 checksum. An imported code is treated as untrusted input,
+Base64URL and a SHA-256 checksum. Exports use a canonical single-line form, while
+the importer normalizes legacy line breaks and common invisible transport whitespace.
+An imported code is treated as untrusted input,
 decoded, size-limited, validated, previewed, and converted into the same record
 draft consumed by the existing workout editor. Import never calls the Sheets
 repository directly and never carries spreadsheet IDs, access tokens, session

@@ -21,6 +21,8 @@ const workout = {
 describe("workout share codes", () => {
   it("round-trips Chinese workout content", async () => {
     const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout, { displayName: "王教練" }));
+    expect(code).toMatch(/^FITNESS-WORKOUT:1:[A-Za-z0-9_-]+:CHECKSUM:[a-f0-9]{16}:END$/);
+    expect(code).not.toContain("\n");
     const result = await decodeWorkoutShareCode(code);
     expect(result.draft).toEqual(expect.objectContaining({ title: "深蹲強度日", notes: workout.notes }));
     expect(result.summary).toEqual(expect.objectContaining({ displayName: "王教練", exerciseCount: 1, setCount: 1 }));
@@ -28,16 +30,30 @@ describe("workout share codes", () => {
 
   it("extracts a share code from surrounding chat text and whitespace", async () => {
     const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout));
-    const [prefix, payload, checksum, end] = code.split("\n");
+    const [, payload, checksum] = code.match(/^FITNESS-WORKOUT:1:([^:]+):CHECKSUM:([a-f0-9]{16}):END$/);
     const wrappedPayload = payload.match(/.{1,30}/g).join("\n");
-    const wrapped = `明天請完成這份菜單：\n\n${prefix}\n${wrappedPayload}\n${checksum}\n${end}\n做完告訴我。`;
+    const wrapped = `明天請完成這份菜單：\n\nFITNESS-WORKOUT:1\n${wrappedPayload}\n:CHECKSUM:${checksum}\n:END\n做完告訴我。`;
     expect((await decodeWorkoutShareCode(wrapped)).draft.title).toBe("深蹲強度日");
+  });
+
+  it("ignores invisible whitespace inserted during copying", async () => {
+    const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout));
+    const [, payload, checksum] = code.match(/^FITNESS-WORKOUT:1:([^:]+):CHECKSUM:([a-f0-9]{16}):END$/);
+    const transportedPayload = payload.match(/.{1,25}/g).join("\u200B \uFEFF");
+    const transported = `FITNESS-WORKOUT:1\u200B${transportedPayload}\u2060:CHECKSUM:${checksum}\u200D:END`;
+    expect((await decodeWorkoutShareCode(transported)).draft.title).toBe("深蹲強度日");
   });
 
   it("rejects modified payloads using the checksum", async () => {
     const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout));
-    const modified = code.replace(/\n([A-Za-z0-9_-])/, (_, character) => `\n${character === "A" ? "B" : "A"}`);
+    const modified = code.replace(/^(FITNESS-WORKOUT:1:)([A-Za-z0-9_-])/, (_, prefix, character) => `${prefix}${character === "A" ? "B" : "A"}`);
     await expect(decodeWorkoutShareCode(modified)).rejects.toMatchObject({ code: "checksum_mismatch" });
+  });
+
+  it("reports text corrupted by character replacement", async () => {
+    const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout));
+    const corrupted = code.replace(/^(FITNESS-WORKOUT:1:.{10})/, "$1\uFFFD");
+    await expect(decodeWorkoutShareCode(corrupted)).rejects.toMatchObject({ code: "corrupted_text" });
   });
 
   it("rejects multiple codes in one pasted message", async () => {

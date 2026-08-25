@@ -8,6 +8,7 @@ const MAX_PAYLOAD_BYTES = 65_536;
 const MAX_EXERCISES = 30;
 const MAX_SETS_PER_EXERCISE = 30;
 const MAX_TOTAL_SETS = 200;
+const TRANSPORT_WHITESPACE = /[\s\u200B\u200C\u200D\u2060\uFEFF]/g;
 
 export class WorkoutShareCodeError extends Error {
   constructor(code, message) {
@@ -102,19 +103,20 @@ export async function encodeWorkoutShareCode(template) {
   const json = JSON.stringify(template);
   if (new TextEncoder().encode(json).byteLength > MAX_PAYLOAD_BYTES) fail("payload_too_large", "課表內容超過允許大小。");
   const payload = encodeBase64Url(json);
-  return `${PREFIX}\n${payload}\n:CHECKSUM:${await checksum(payload)}\n:END`;
+  return `${PREFIX}:${payload}:CHECKSUM:${await checksum(payload)}:END`;
 }
 
 function extractShareCode(text) {
   const input = String(text ?? "");
   if (input.length > MAX_INPUT_LENGTH) fail("input_too_large", "貼上的文字超過允許大小。");
-  const pattern = /FITNESS-WORKOUT:(\d+)\s+([A-Za-z0-9_\s-]+?)\s+:CHECKSUM:([a-fA-F0-9]{16})\s+:END/g;
+  const pattern = /FITNESS-WORKOUT:(\d+)(?::|[\s\u200B\u200C\u200D\u2060\uFEFF]+)([A-Za-z0-9_\s\u200B\u200C\u200D\u2060\uFEFF-]+?)[\s\u200B\u200C\u200D\u2060\uFEFF]*:CHECKSUM:[\s\u200B\u200C\u200D\u2060\uFEFF]*([a-fA-F0-9]{16})[\s\u200B\u200C\u200D\u2060\uFEFF]*:END/g;
   const matches = Array.from(input.matchAll(pattern));
+  if (matches.length === 0 && input.includes("\uFFFD")) fail("corrupted_text", "課表代碼含有無法辨識的字元，請重新複製完整的單行代碼。");
   if (matches.length === 0) fail("code_not_found", "找不到完整的 FITNESS-WORKOUT 課表代碼。");
   if (matches.length > 1) fail("multiple_codes", "找到多份課表代碼，請一次只貼上一份。");
   const [, version, rawPayload, expectedChecksum] = matches[0];
   if (Number(version) !== VERSION) fail("unsupported_version", "這份課表代碼不是目前支援的版本。");
-  return { payload: rawPayload.replace(/\s/g, ""), expectedChecksum: expectedChecksum.toLowerCase() };
+  return { payload: rawPayload.replace(TRANSPORT_WHITESPACE, ""), expectedChecksum: expectedChecksum.toLowerCase() };
 }
 
 export async function decodeWorkoutShareCode(text) {
