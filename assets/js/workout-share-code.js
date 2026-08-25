@@ -95,13 +95,15 @@ export function validateWorkoutTemplate(template) {
   return draft;
 }
 
-export function createWorkoutTemplate(input, { displayName = "" } = {}) {
+export function createWorkoutTemplate(input, { displayName = "", includeNotes = false } = {}) {
   const workout = sanitizeDraft(input);
   delete workout.mode;
-  delete workout.notes;
-  workout.exercises.forEach((exercise) => {
-    exercise.sets.forEach((set) => delete set.notes);
-  });
+  if (!includeNotes) {
+    delete workout.notes;
+    workout.exercises.forEach((exercise) => {
+      exercise.sets.forEach((set) => delete set.notes);
+    });
+  }
   const template = {
     format: FORMAT,
     version: VERSION,

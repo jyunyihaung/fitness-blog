@@ -8,7 +8,7 @@ import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarning
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 import { safeErrorMessage } from "./app-error.js";
-import { createWorkoutTemplate, encodeWorkoutShareCode } from "./workout-share-code.js?v=4";
+import { createWorkoutTemplate, encodeWorkoutShareCode } from "./workout-share-code.js?v=5";
 
 const liftOutput = document.querySelector("[data-lift-choices]");
 const modeOutput = document.querySelector("[data-mode-choices]");
@@ -223,7 +223,7 @@ function setupQuickExport() {
     setQuickExportErrors(errorOutput, errors);
     if (errors.length > 0) return;
     try {
-      const template = createWorkoutTemplate(input, { displayName: nameInput.value });
+      const template = createWorkoutTemplate(input, { displayName: nameInput.value, includeNotes: true });
       codeOutput.value = await encodeWorkoutShareCode(template);
       copyButton.disabled = false;
       copyStatus.textContent = "課表代碼已產生。";

@@ -33,6 +33,15 @@ describe("workout share codes", () => {
     expect(result.summary).toEqual(expect.objectContaining({ displayName: "王教練", exerciseCount: 1, setCount: 1 }));
   });
 
+  it("exports workout and set notes when explicitly requested", async () => {
+    const template = createWorkoutTemplate(workout, { includeNotes: true });
+    expect(template.workout.notes).toBe(workout.notes);
+    expect(template.workout.exercises[0].sets[0].notes).toBe("休息 3 分鐘");
+    const result = await decodeWorkoutShareCode(await encodeWorkoutShareCode(template));
+    expect(result.draft.notes).toBe(workout.notes);
+    expect(result.draft.exercises[0].sets[0].notes).toBe("休息 3 分鐘");
+  });
+
   it("extracts a share code from surrounding chat text and whitespace", async () => {
     const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout));
     const [, payload, checksum] = code.match(/^FITNESS-WORKOUT:1:([^:]+):CHECKSUM:([a-f0-9]{16}):END$/);

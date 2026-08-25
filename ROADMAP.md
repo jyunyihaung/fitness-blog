@@ -80,8 +80,8 @@ completed through the existing Sessions/Sets pipeline. Record editing and
 deletion are available from the record list for connected, writable
 spreadsheets. Goal deletion and workbook-backed preferences are also available;
 Add Record also supports versioned copy/paste coach workout codes with checksum
-validation and an import preview. Quick Add can export its edited suggestion
-without workout/set notes through the same format, with an explicit choice
+validation and an import preview. Quick Add can export its edited suggestion,
+generated guidance, and workout/set notes through the same format, with an explicit choice
 between the current resolved maximum and a manually entered maximum. Typed
 migration remains pending.
 
