@@ -59,6 +59,16 @@ describe("workout share codes", () => {
     expect(getWorkoutShareCodeDiagnostics(transported)).toContain("URL 編碼：是，已還原");
   });
 
+  it("accepts format markers lowercased by an iPhone paste", async () => {
+    const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout));
+    const transported = code
+      .replace("FITNESS-WORKOUT", "fitness-workout")
+      .replace(":CHECKSUM:", ":checksum:")
+      .replace(":END", ":end");
+    expect((await decodeWorkoutShareCode(transported)).draft.title).toBe("深蹲強度日");
+    expect(getWorkoutShareCodeDiagnostics(transported)).toContain("找到，但大小寫已改變");
+  });
+
   it("reports missing share-code sections without echoing the complete input", () => {
     const diagnostics = getWorkoutShareCodeDiagnostics("FITNESS-WORKOUT：1：payload");
     expect(diagnostics).toContain("前綴 FITNESS-WORKOUT:1：找不到");

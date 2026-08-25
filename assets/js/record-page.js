@@ -4,7 +4,7 @@ import { appState } from "./app-state.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 import { safeErrorMessage } from "./app-error.js";
-import { createWorkoutTemplate, decodeWorkoutShareCode, encodeWorkoutShareCode, getWorkoutShareCodeDiagnostics } from "./workout-share-code.js?v=3";
+import { createWorkoutTemplate, decodeWorkoutShareCode, encodeWorkoutShareCode, getWorkoutShareCodeDiagnostics } from "./workout-share-code.js?v=4";
 
 const form = document.querySelector("[data-record-form]");
 const exercisesOutput = document.querySelector("[data-exercises]");

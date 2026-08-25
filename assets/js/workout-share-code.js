@@ -40,6 +40,8 @@ function visibleExcerpt(text, start, length = 100) {
 export function getWorkoutShareCodeDiagnostics(text) {
   const rawInput = String(text ?? "");
   const input = normalizeTransportInput(rawInput);
+  const hasExactPrefix = input.includes(PREFIX);
+  const hasCaseChangedPrefix = new RegExp(PREFIX, "i").test(input);
   const suspicious = Array.from(input).flatMap((character, index) => {
     if (/^[\x20-\x7E\s]$/.test(character)) return [];
     return [`${index}: U+${character.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`];
@@ -48,7 +50,7 @@ export function getWorkoutShareCodeDiagnostics(text) {
     `原始長度：${rawInput.length}`,
     `正規化後長度：${input.length}`,
     `URL 編碼：${rawInput === input ? "否" : "是，已還原"}`,
-    `前綴 FITNESS-WORKOUT:1：${input.includes(PREFIX) ? "找到" : "找不到"}`,
+    `前綴 FITNESS-WORKOUT:1：${hasExactPrefix ? "找到" : hasCaseChangedPrefix ? "找到，但大小寫已改變" : "找不到"}`,
     `CHECKSUM 標記：${input.includes(":CHECKSUM:") ? "找到" : "找不到"}`,
     `結尾 :END：${input.includes(":END") ? "找到" : "找不到"}`,
     `開頭片段：${visibleExcerpt(input, 0)}`,
@@ -150,7 +152,7 @@ function extractShareCode(text) {
   if (rawInput.length > MAX_INPUT_LENGTH) fail("input_too_large", "貼上的文字超過允許大小。");
   const input = normalizeTransportInput(rawInput);
   if (input.length > MAX_INPUT_LENGTH) fail("input_too_large", "貼上的文字超過允許大小。");
-  const pattern = /FITNESS-WORKOUT:(\d+)(?::|[\s\u200B\u200C\u200D\u2060\uFEFF]+)([A-Za-z0-9_\s\u200B\u200C\u200D\u2060\uFEFF-]+?)[\s\u200B\u200C\u200D\u2060\uFEFF]*:CHECKSUM:[\s\u200B\u200C\u200D\u2060\uFEFF]*([a-fA-F0-9]{16})[\s\u200B\u200C\u200D\u2060\uFEFF]*:END/g;
+  const pattern = /FITNESS-WORKOUT:(\d+)(?::|[\s\u200B\u200C\u200D\u2060\uFEFF]+)([A-Za-z0-9_\s\u200B\u200C\u200D\u2060\uFEFF-]+?)[\s\u200B\u200C\u200D\u2060\uFEFF]*:CHECKSUM:[\s\u200B\u200C\u200D\u2060\uFEFF]*([a-fA-F0-9]{16})[\s\u200B\u200C\u200D\u2060\uFEFF]*:END/gi;
   const matches = Array.from(input.matchAll(pattern));
   if (matches.length === 0 && input.includes("\uFFFD")) fail("corrupted_text", "課表代碼含有無法辨識的字元，請重新複製完整的單行代碼。");
   if (matches.length === 0) fail("code_not_found", "找不到完整的 FITNESS-WORKOUT 課表代碼。");
