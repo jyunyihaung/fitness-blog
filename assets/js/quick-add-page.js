@@ -8,7 +8,7 @@ import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarning
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 import { safeErrorMessage } from "./app-error.js";
-import { createWorkoutTemplate, encodeWorkoutShareCode } from "./workout-share-code.js";
+import { createWorkoutTemplate, encodeWorkoutShareCode } from "./workout-share-code.js?v=2";
 
 const liftOutput = document.querySelector("[data-lift-choices]");
 const modeOutput = document.querySelector("[data-mode-choices]");

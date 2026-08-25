@@ -1,6 +1,6 @@
 import "./main.js";
-import "./record-page.js";
-import "./quick-add-page.js";
+import "./record-page.js?v=2";
+import "./quick-add-page.js?v=2";
 import "./goals-page.js";
 import "./records-page.js";
 import "./settings-page.js";
