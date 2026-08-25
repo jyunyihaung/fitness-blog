@@ -138,13 +138,13 @@ also accepts legacy multiline codes and ignores common invisible whitespace.
 URL-encoded codes produced by some mobile copy-and-paste flows are normalized too.
 Importing always opens a preview and replaces only the in-memory editor draft; the user
 must review and press Save before anything is written to Google Sheets. A code
-is not encrypted and should not contain sensitive personal information.
+does not include workout or set `notes`, is not encrypted, and should not contain
+sensitive personal information.
 
 After Quick Add generates a suggestion, **匯出課表** exports every set currently
-shown in its editable workout editor together with the selected mode's goal,
-RPE guidance, rest interval, technique tips, and any divergence warning. Export
-does not depend on the completed-set checkboxes; those checkboxes continue to
-control only which sets are saved as a completed workout.
+shown in its editable workout editor, excluding workout and set notes. Export does
+not depend on the completed-set checkboxes; those checkboxes continue to control
+only which sets are saved as a completed workout.
 
 Quick Add provides an explicit reference-weight choice. **目前最大重量** resolves
 the selected lift from Goals current weight, historical best single, then

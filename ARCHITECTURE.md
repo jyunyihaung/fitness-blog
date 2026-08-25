@@ -41,7 +41,7 @@ An imported code is treated as untrusted input,
 decoded, size-limited, validated, previewed, and converted into the same record
 draft consumed by the existing workout editor. Import never calls the Sheets
 repository directly and never carries spreadsheet IDs, access tokens, session
-IDs, or set IDs. Share codes are neither encrypted nor persisted.
+IDs, set IDs, or workout/set notes. Share codes are neither encrypted nor persisted.
 
 Training-mode guidance belongs to the training mode configuration, independently
 of lift-specific technique guidance. The UI renders the selected mode's goal,

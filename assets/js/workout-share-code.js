@@ -61,6 +61,10 @@ export function validateWorkoutTemplate(template) {
 export function createWorkoutTemplate(input, { displayName = "" } = {}) {
   const workout = sanitizeDraft(input);
   delete workout.mode;
+  delete workout.notes;
+  workout.exercises.forEach((exercise) => {
+    exercise.sets.forEach((set) => delete set.notes);
+  });
   const template = {
     format: FORMAT,
     version: VERSION,

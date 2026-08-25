@@ -19,12 +19,16 @@ const workout = {
 };
 
 describe("workout share codes", () => {
-  it("round-trips Chinese workout content", async () => {
-    const code = await encodeWorkoutShareCode(createWorkoutTemplate(workout, { displayName: "王教練" }));
+  it("round-trips Chinese workout content without exporting notes", async () => {
+    const template = createWorkoutTemplate(workout, { displayName: "王教練" });
+    const code = await encodeWorkoutShareCode(template);
     expect(code).toMatch(/^FITNESS-WORKOUT:1:[A-Za-z0-9_-]+:CHECKSUM:[a-f0-9]{16}:END$/);
     expect(code).not.toContain("\n");
+    expect(template.workout).not.toHaveProperty("notes");
+    expect(template.workout.exercises[0].sets[0]).not.toHaveProperty("notes");
     const result = await decodeWorkoutShareCode(code);
-    expect(result.draft).toEqual(expect.objectContaining({ title: "深蹲強度日", notes: workout.notes }));
+    expect(result.draft).toEqual(expect.objectContaining({ title: "深蹲強度日", notes: "" }));
+    expect(result.draft.exercises[0].sets[0].notes).toBe("");
     expect(result.summary).toEqual(expect.objectContaining({ displayName: "王教練", exerciseCount: 1, setCount: 1 }));
   });
 
