@@ -4,7 +4,7 @@ import { appState } from "./app-state.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 import { safeErrorMessage } from "./app-error.js";
-import { createWorkoutTemplate, decodeWorkoutShareCode, encodeWorkoutShareCode } from "./workout-share-code.js?v=2";
+import { createWorkoutTemplate, decodeWorkoutShareCode, encodeWorkoutShareCode, getWorkoutShareCodeDiagnostics } from "./workout-share-code.js?v=3";
 
 const form = document.querySelector("[data-record-form]");
 const exercisesOutput = document.querySelector("[data-exercises]");
@@ -135,6 +135,7 @@ function setupShareDialogs() {
   const importPreview = document.querySelector("[data-import-preview]");
   const importCode = document.querySelector("[data-import-code]");
   const importError = document.querySelector("[data-import-error]");
+  const importDebug = document.querySelector("[data-import-debug]");
   const exportCode = document.querySelector("[data-export-code]");
   const exportError = document.querySelector("[data-export-error]");
   const copyButton = document.querySelector("[data-copy-export]");
@@ -154,6 +155,8 @@ function setupShareDialogs() {
     importEntry.hidden = false;
     importPreview.hidden = true;
     setDialogError(importError, []);
+    importDebug.hidden = true;
+    importDebug.textContent = "";
     importDialog.showModal();
     importCode.focus();
   });
@@ -165,6 +168,8 @@ function setupShareDialogs() {
   });
   document.querySelector("[data-parse-import]").addEventListener("click", async () => {
     setDialogError(importError, []);
+    importDebug.hidden = true;
+    importDebug.textContent = "";
     try {
       const result = await decodeWorkoutShareCode(importCode.value);
       importedDraft = result.draft;
@@ -175,6 +180,8 @@ function setupShareDialogs() {
       document.querySelector("[data-apply-import]").focus();
     } catch (error) {
       setDialogError(importError, String(error?.message || "無法解析課表代碼。").split("\n"));
+      importDebug.textContent = `錯誤代碼：${error?.code || "unknown"}\n${getWorkoutShareCodeDiagnostics(importCode.value)}`;
+      importDebug.hidden = false;
     }
   });
   document.querySelector("[data-apply-import]").addEventListener("click", () => {

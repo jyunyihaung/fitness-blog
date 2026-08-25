@@ -22,6 +22,41 @@ function fail(code, message) {
   throw new WorkoutShareCodeError(code, message);
 }
 
+function normalizeTransportInput(text) {
+  const rawInput = String(text ?? "");
+  if (!/%[a-fA-F0-9]{2}/.test(rawInput)) return rawInput;
+  try {
+    return decodeURIComponent(rawInput);
+  } catch (_) {
+    const transportCharacters = { "09": "\t", "0a": "\n", "0d": "\r", "20": " ", "3a": ":" };
+    return rawInput.replace(/%(09|0A|0D|20|3A)/gi, (_, hex) => transportCharacters[hex.toLowerCase()]);
+  }
+}
+
+function visibleExcerpt(text, start, length = 100) {
+  return JSON.stringify(text.slice(start, start + length));
+}
+
+export function getWorkoutShareCodeDiagnostics(text) {
+  const rawInput = String(text ?? "");
+  const input = normalizeTransportInput(rawInput);
+  const suspicious = Array.from(input).flatMap((character, index) => {
+    if (/^[\x20-\x7E\s]$/.test(character)) return [];
+    return [`${index}: U+${character.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")}`];
+  }).slice(0, 12);
+  return [
+    `原始長度：${rawInput.length}`,
+    `正規化後長度：${input.length}`,
+    `URL 編碼：${rawInput === input ? "否" : "是，已還原"}`,
+    `前綴 FITNESS-WORKOUT:1：${input.includes(PREFIX) ? "找到" : "找不到"}`,
+    `CHECKSUM 標記：${input.includes(":CHECKSUM:") ? "找到" : "找不到"}`,
+    `結尾 :END：${input.includes(":END") ? "找到" : "找不到"}`,
+    `開頭片段：${visibleExcerpt(input, 0)}`,
+    `結尾片段：${visibleExcerpt(input, Math.max(0, input.length - 100))}`,
+    `可疑 Unicode：${suspicious.length > 0 ? suspicious.join(", ") : "無"}`,
+  ].join("\n");
+}
+
 function sanitizeDraft(workout) {
   return {
     mode: "import",
@@ -113,15 +148,7 @@ export async function encodeWorkoutShareCode(template) {
 function extractShareCode(text) {
   const rawInput = String(text ?? "");
   if (rawInput.length > MAX_INPUT_LENGTH) fail("input_too_large", "貼上的文字超過允許大小。");
-  let input = rawInput;
-  if (/%[a-fA-F0-9]{2}/.test(rawInput)) {
-    try {
-      input = decodeURIComponent(rawInput);
-    } catch (_) {
-      const transportCharacters = { "09": "\t", "0a": "\n", "0d": "\r", "20": " ", "3a": ":" };
-      input = rawInput.replace(/%(09|0A|0D|20|3A)/gi, (_, hex) => transportCharacters[hex.toLowerCase()]);
-    }
-  }
+  const input = normalizeTransportInput(rawInput);
   if (input.length > MAX_INPUT_LENGTH) fail("input_too_large", "貼上的文字超過允許大小。");
   const pattern = /FITNESS-WORKOUT:(\d+)(?::|[\s\u200B\u200C\u200D\u2060\uFEFF]+)([A-Za-z0-9_\s\u200B\u200C\u200D\u2060\uFEFF-]+?)[\s\u200B\u200C\u200D\u2060\uFEFF]*:CHECKSUM:[\s\u200B\u200C\u200D\u2060\uFEFF]*([a-fA-F0-9]{16})[\s\u200B\u200C\u200D\u2060\uFEFF]*:END/g;
   const matches = Array.from(input.matchAll(pattern));

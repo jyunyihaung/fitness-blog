@@ -928,6 +928,20 @@ code {
   word-break: normal;
 }
 
+.share-debug {
+  max-height: 18rem;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-4);
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-muted);
+  color: var(--color-muted);
+  font: 0.75rem/1.5 ui-monospace, SFMono-Regular, Consolas, monospace;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 .share-preview-exercise {
   padding: var(--space-4);
   border-radius: var(--radius-sm);

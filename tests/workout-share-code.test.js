@@ -3,6 +3,7 @@ import {
   createWorkoutTemplate,
   decodeWorkoutShareCode,
   encodeWorkoutShareCode,
+  getWorkoutShareCodeDiagnostics,
   WorkoutShareCodeError,
 } from "../assets/js/workout-share-code.js";
 
@@ -55,6 +56,14 @@ describe("workout share codes", () => {
     const transported = encodeURIComponent(legacyCode);
     expect(transported).toContain("%0A%3ACHECKSUM%3A");
     expect((await decodeWorkoutShareCode(transported)).draft.title).toBe("深蹲強度日");
+    expect(getWorkoutShareCodeDiagnostics(transported)).toContain("URL 編碼：是，已還原");
+  });
+
+  it("reports missing share-code sections without echoing the complete input", () => {
+    const diagnostics = getWorkoutShareCodeDiagnostics("FITNESS-WORKOUT：1：payload");
+    expect(diagnostics).toContain("前綴 FITNESS-WORKOUT:1：找不到");
+    expect(diagnostics).toContain("U+FF1A");
+    expect(diagnostics).toContain("CHECKSUM 標記：找不到");
   });
 
   it("rejects modified payloads using the checksum", async () => {
