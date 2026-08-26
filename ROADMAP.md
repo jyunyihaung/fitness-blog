@@ -22,9 +22,10 @@ Deliverables: `ARCHITECTURE.md`, `DATA_MODEL.md`, and this milestone plan.
 Status: partially implemented in the Jekyll client. A hash router, single app
 shell, shared memory-only OAuth service, app state, and accessible route focus
 management are now present. Vitest and the first pure-module test suite are also
-configured; Vite, TypeScript, and ESLint remain pending.
+configured. ESLint and a unified local release verification command are now
+present; Vite and TypeScript remain pending.
 
-- Add Vite, strict TypeScript, ESLint, Vitest, and `.env.example`.
+- Add Vite, strict TypeScript, and `.env.example`. (ESLint and Vitest implemented)
 - Add hash router, app shell, responsive navigation, style tokens, and accessible
   loading/error/empty components.
 - Add typed models, repository interfaces, sanitized application errors, and an
@@ -99,7 +100,13 @@ perform a best-effort master-list sync after workout persistence.
 
 ## Phase 7 — Review and deployment
 
-- Run lint, tests, and production build.
+Status: in progress. The P0 release gate now includes ESLint, Vitest, and Jekyll
+build commands. The document/status audit, `zh-TW` document language, sanitized
+production error logging, pinned Chart.js dependency, and privacy notes are
+implemented. Automated browser accessibility/mobile review and production
+Google Cloud credential verification remain pending.
+
+- Run lint, tests, and production build. (local verification command implemented)
 - Audit accessibility, mobile keyboard behavior, privacy, error states, and base
   path handling.
 - Update README with Google Cloud and Pages setup.

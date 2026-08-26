@@ -32,7 +32,7 @@ stored in `localStorage`. Access tokens and workout records remain memory-only.
 | Area | Current | Target |
 | --- | --- | --- |
 | Runtime | Jekyll and ES modules | Vite and strict TypeScript |
-| Quality tools | Vitest | Vitest, ESLint, typed build, integration tests |
+| Quality tools | Vitest, ESLint, unified local verification | Typed build and integration tests |
 | Repository | Google Sheets functions | Typed repository contract plus in-memory implementation |
 | Errors | Stable safe client errors for external services | Typed errors throughout every layer |
 | Exercises | Managed master data with normalized-name deduplication | Typed repository and broader conflict-recovery tests |
@@ -55,7 +55,9 @@ stored in `localStorage`. Access tokens and workout records remain memory-only.
 ## Assessment conclusion
 
 The Jekyll implementation is now a usable MVP rather than an initial prototype.
-The next gate should focus on broader automated testing, exercise deduplication,
-accessibility/error-state review, and a clean production verification. Vite and
-TypeScript migration should begin only after the current deployable client
-passes that gate. GitHub Actions remain unchanged unless explicitly requested.
+The next gate should focus on broader automated and browser testing,
+accessibility/error-state review, production Google Cloud configuration, and a
+clean production verification in a Node.js 20+ environment. Exercise
+deduplication is implemented and covered by unit tests. Vite and TypeScript
+migration should begin only after the current deployable client passes that
+gate. GitHub Actions remain unchanged unless explicitly requested.

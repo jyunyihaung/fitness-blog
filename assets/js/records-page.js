@@ -3,7 +3,7 @@ import { googleAuth } from "./auth-service.js";
 import { getSelectedSpreadsheet } from "./preferences.js";
 import { appState } from "./app-state.js";
 import { deleteWorkoutRecord } from "./google-sheets.js";
-import { safeErrorMessage } from "./app-error.js";
+import { reportAppError, safeErrorMessage } from "./app-error.js";
 
 function appendText(parent, tagName, className, text) {
   const element = document.createElement(tagName);
@@ -117,7 +117,7 @@ function renderSession(workout, editable) {
         await deleteWorkoutRecord(selected.id, accessToken, workout.id);
         window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "records" } }));
       } catch (error) {
-        console.error("Unable to delete workout record.", error);
+        reportAppError("delete-workout-record", error);
         setStatus(describeError(error), "error");
         remove.disabled = false;
         edit.disabled = false;
@@ -175,7 +175,7 @@ async function loadRecords() {
     }
     renderRecords(await getWorkoutData({ spreadsheetId, accessToken }));
   } catch (error) {
-    console.error("Unable to load record list.", error);
+    reportAppError("load-record-list", error);
     setStatus(describeError(error), "error");
   }
 }

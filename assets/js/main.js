@@ -6,7 +6,7 @@ import { googleAuth } from "./auth-service.js";
 import { appState } from "./app-state.js";
 import { createTrainingSpreadsheet, pickSpreadsheet, readRanges, validateSpreadsheet } from "./google-sheets.js";
 import { getSelectedSpreadsheet } from "./preferences.js";
-import { safeErrorMessage } from "./app-error.js";
+import { reportAppError, safeErrorMessage } from "./app-error.js";
 import { parseExercises } from "./exercises.js";
 
 let activeCharts = [];
@@ -175,7 +175,7 @@ async function runSetupOperation(button, workingText, operation) {
   try {
     await operation();
   } catch (error) {
-    console.error("Google Sheets setup failed.", error);
+    reportAppError("google-sheets-setup", error);
     setSetupStatus(describeError(error), error?.name === "AbortError" ? "idle" : "error");
     document.documentElement.dataset.ready = "error";
   } finally {
@@ -258,7 +258,7 @@ async function initializeApp() {
   try {
     await loadDashboard({ id: publicSpreadsheetId }, null);
   } catch (error) {
-    console.error("Unable to load workout data.", error);
+    reportAppError("load-public-workout-data", error);
     setAppVisible(false);
     setSetupStatus(`預設試算表無法載入：${describeError(error)}`, "error");
     document.documentElement.dataset.ready = "error";
@@ -275,7 +275,7 @@ window.addEventListener("fitness:data-changed", async () => {
   try {
     await loadDashboard(spreadsheet, accessToken);
   } catch (error) {
-    console.error("Unable to refresh dashboard data.", error);
+    reportAppError("refresh-dashboard", error);
   }
 });
 
@@ -287,6 +287,6 @@ window.addEventListener("fitness:route-change", async (event) => {
   try {
     await loadDashboard(spreadsheet, accessToken);
   } catch (error) {
-    console.error("Unable to load dashboard from the shared session.", error);
+    reportAppError("load-dashboard", error);
   }
 });

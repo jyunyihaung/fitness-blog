@@ -2,7 +2,7 @@ import { createGoalRecords, parseGoals, validateGoals } from "./goals.js";
 import { googleAuth } from "./auth-service.js";
 import { appState } from "./app-state.js";
 import { deleteGoal, readRanges, upsertGoals, validateSpreadsheet } from "./google-sheets.js";
-import { safeErrorMessage } from "./app-error.js";
+import { reportAppError, safeErrorMessage } from "./app-error.js";
 
 const connectPanel = document.querySelector("[data-goal-connect]");
 const connectionMessage = document.querySelector("[data-goal-connection-message]");
@@ -145,7 +145,7 @@ async function initialize() {
       window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "goals" } }));
       setStatus("訓練目標已儲存到 Google Sheet。", "success");
     } catch (error) {
-      console.error("Unable to save goals.", error);
+      reportAppError("save-goals", error);
       setStatus(describeError(error), "error");
     } finally {
       setBusy(false);
@@ -167,7 +167,7 @@ async function initialize() {
         window.dispatchEvent(new CustomEvent("fitness:data-changed", { detail: { source: "goals" } }));
         setStatus("訓練目標已刪除。", "success");
       } catch (error) {
-        console.error("Unable to delete goal.", error);
+        reportAppError("delete-goal", error);
         setStatus(describeError(error), "error");
       } finally {
         setBusy(false);

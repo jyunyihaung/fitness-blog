@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { AppError, googleApiError, safeErrorMessage } from "../assets/js/app-error.js";
+import { describe, expect, it, vi } from "vitest";
+import { AppError, googleApiError, reportAppError, safeErrorMessage } from "../assets/js/app-error.js";
 import { createSettingRecords, parseSettings, validateSettings } from "../assets/js/settings.js";
 
 describe("safe application errors", () => {
@@ -12,6 +12,20 @@ describe("safe application errors", () => {
 
   it("maps authorization cancellation to a stable message", () => {
     expect(safeErrorMessage(new DOMException("raw", "AbortError"))).toContain("取消");
+  });
+
+  it("logs only sanitized error metadata", () => {
+    const rawCause = { error: { message: "sensitive upstream detail" } };
+    const logger = vi.spyOn(console, "error").mockImplementation(() => {});
+    reportAppError("load-dashboard", googleApiError(403, rawCause));
+    expect(logger).toHaveBeenCalledWith("Application operation failed.", {
+      operation: "load-dashboard",
+      code: "permission_denied",
+      status: 403,
+      retryable: false,
+    });
+    expect(logger.mock.calls.flat(Infinity)).not.toContain(rawCause);
+    logger.mockRestore();
   });
 });
 

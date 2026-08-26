@@ -3,7 +3,7 @@ import { googleAuth } from "./auth-service.js";
 import { appState } from "./app-state.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
-import { safeErrorMessage } from "./app-error.js";
+import { reportAppError, safeErrorMessage } from "./app-error.js";
 import { createWorkoutTemplate, decodeWorkoutShareCode, encodeWorkoutShareCode, getWorkoutShareCodeDiagnostics } from "./workout-share-code.js?v=5";
 
 const form = document.querySelector("[data-record-form]");
@@ -353,7 +353,7 @@ async function initialize() {
       setStatus(editingSessionId ? "訓練紀錄已更新，正在返回紀錄列表。" : "訓練紀錄已儲存，正在返回 Dashboard。", "success");
       window.location.hash = editingSessionId ? "/records" : "/dashboard";
     } catch (error) {
-      console.error("Unable to save workout record.", error);
+      reportAppError("save-workout-record", error);
       setStatus(describeError(error), error?.name === "AbortError" ? "idle" : "error");
     } finally {
       setSaving(false);

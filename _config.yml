@@ -3,7 +3,7 @@ description: A Google Sheets-powered fitness tracker running on GitHub Pages.
 brand_initials: FB
 url: "https://jyunyihaung.github.io"
 baseurl: "/fitness-blog"
-lang: en
+lang: zh-TW
 timezone: UTC
 
 google_analytics:
@@ -39,6 +39,7 @@ navigation:
     url: /#/settings
 
 exclude:
+  - node_modules
   - AGENTS.md
   - ARCHITECTURE.md
   - DATA_MODEL.md
@@ -48,6 +49,7 @@ exclude:
   - Gemfile.lock
   - package.json
   - package-lock.json
+  - eslint.config.js
   - vitest.config.js
   - tests
   - README.md

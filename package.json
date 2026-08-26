@@ -7,10 +7,15 @@
     "node": ">=20"
   },
   "scripts": {
+    "lint": "eslint .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build": "JEKYLL_ENV=production bundle exec jekyll build --destination ${TMPDIR:-/tmp}/fitness-blog-build",
+    "check": "npm run lint && npm test",
+    "verify": "npm run check && npm run build"
   },
   "devDependencies": {
+    "eslint": "^10.9.1",
     "vitest": "4.1.10"
   }
 }

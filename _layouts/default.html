@@ -27,7 +27,7 @@
     <link rel="stylesheet" href="{{ '/assets/css/records.css' | relative_url }}?v={{ site.time | date: '%s' }}">
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Skip to content</a>
+    <a class="skip-link" href="#main-content">跳到主要內容</a>
     {% include navbar.html %}
     <main id="main-content" class="site-main">
       {{ content }}
@@ -46,7 +46,7 @@
       };
     </script>
     {% unless page.hide_charts %}
-      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     {% endunless %}
     {% assign page_script = page.script | default: '/assets/js/page.js' %}
     <script type="module" src="{{ page_script | relative_url }}?v={{ site.time | date: '%s' }}"></script>

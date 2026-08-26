@@ -26,6 +26,17 @@ export function safeErrorMessage(error, fallback = SAFE_MESSAGES.google_api_erro
   return fallback;
 }
 
+export function reportAppError(operation, error) {
+  // Never log the Error object: Google API errors retain the raw response in
+  // `cause` for classification, and production logs must not expose it.
+  console.error("Application operation failed.", {
+    operation,
+    code: error instanceof AppError ? error.code : "unexpected_error",
+    status: error instanceof AppError ? error.status : null,
+    retryable: error instanceof AppError ? error.retryable : false,
+  });
+}
+
 export function googleApiError(status, cause) {
   if (status === 401) return new AppError("authorization_expired", { status, cause });
   if (status === 403) return new AppError("permission_denied", { status, cause });

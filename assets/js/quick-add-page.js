@@ -7,7 +7,7 @@ import { resolveReferenceOneRepMax } from "./one-rep-max.js";
 import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, parseManualOneRepMax, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
-import { safeErrorMessage } from "./app-error.js";
+import { reportAppError, safeErrorMessage } from "./app-error.js";
 import { createWorkoutTemplate, encodeWorkoutShareCode } from "./workout-share-code.js?v=5";
 
 const liftOutput = document.querySelector("[data-lift-choices]");
@@ -276,7 +276,7 @@ async function saveWorkout() {
     saveStatus.textContent = "訓練紀錄已儲存，正在返回 Dashboard。";
     window.location.hash = "/dashboard";
   } catch (error) {
-    console.error("Unable to save Quick Add workout.", error);
+    reportAppError("save-quick-add-workout", error);
     showSaveErrors([safeErrorMessage(error, "無法儲存訓練紀錄，請稍後重試。")]);
     saveStatus.textContent = "";
   } finally {
@@ -322,7 +322,7 @@ async function generateWorkout() {
     });
     renderPreview(generatedDraft, reference);
   } catch (error) {
-    console.error("Unable to generate Quick Add workout.", error);
+    reportAppError("generate-quick-add-workout", error);
     showError(safeErrorMessage(error, "無法產生訓練建議，請稍後重試。"));
   } finally {
     setBusy(false);

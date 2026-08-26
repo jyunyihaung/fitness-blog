@@ -65,6 +65,18 @@ npm install
 npm test
 ```
 
+Run the complete local quality gate before a release:
+
+```shell
+npm ci
+npm run verify
+```
+
+`npm run verify` runs ESLint, the Vitest suite, and a clean Jekyll production
+build in the system temporary directory. Node.js 20 or newer, Ruby, Bundler,
+and the locked gems are required. The scripts target the POSIX shell used by
+GitHub Pages and the documented local setup.
+
 The tests cover workout validation and record conversion, Quick Add prescriptions
 and reference 1RM resolution, named-header workout mapping, statistics, Goals
 parsing/validation/progress, and Sessions/Sets/Goals batch request construction.
@@ -119,6 +131,19 @@ GitHub Pages can rebuild it.
 The OAuth client ID, restricted browser API key, and project number are public
 browser configuration, not secrets. Never add an OAuth client secret or access
 token to this repository. Access tokens are kept in memory only.
+
+## Privacy
+
+Workout records are read from and written to the selected Google Sheet. They
+are not persisted in Git or browser storage. The browser stores only the
+selected spreadsheet ID and display name; Google access tokens remain in memory
+and are discarded on sign-out, expiry, or page reload.
+
+This deployment loads Google Analytics when `google_analytics.measurement_id`
+is configured. Analytics is used for aggregate site usage and must not receive
+workout names, spreadsheet IDs, access tokens, imported share codes, or raw
+Google API responses. Disable the measurement ID for deployments that do not
+want analytics, and apply any consent requirements for the deployment region.
 
 When no public fallback is configured, the first-run screen lets the user select
 an existing compatible spreadsheet or create a complete version 1 workbook. The
