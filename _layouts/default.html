@@ -25,6 +25,7 @@
     </title>
     <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}?v={{ site.time | date: '%s' }}">
     <link rel="stylesheet" href="{{ '/assets/css/records.css' | relative_url }}?v={{ site.time | date: '%s' }}">
+    <link rel="stylesheet" href="{{ '/assets/css/rest-timer.css' | relative_url }}?v={{ site.time | date: '%s' }}">
   </head>
   <body>
     <a class="skip-link" href="#main-content">跳到主要內容</a>
@@ -50,5 +51,6 @@
     {% endunless %}
     {% assign page_script = page.script | default: '/assets/js/page.js' %}
     <script type="module" src="{{ page_script | relative_url }}?v={{ site.time | date: '%s' }}"></script>
+    <script type="module" src="{{ '/assets/js/rest-timer-bootstrap.js' | relative_url }}?v={{ site.time | date: '%s' }}"></script>
   </body>
 </html>
