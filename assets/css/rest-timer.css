@@ -1,0 +1,51 @@
+.rest-timer-card {
+  display: grid;
+  gap: .75rem;
+  margin: 1rem 0;
+  padding: 1rem;
+}
+
+.rest-timer-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rest-timer-heading h2,
+.rest-timer-heading p { margin: 0; }
+
+.rest-timer-clock {
+  font-size: clamp(2rem, 10vw, 3.5rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  letter-spacing: .04em;
+  line-height: 1;
+}
+
+.rest-timer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.rest-timer-card[data-rest-state="finished"] .rest-timer-clock,
+.rest-timer-card[data-rest-state="finished"] [data-rest-status] {
+  font-weight: 800;
+}
+
+.rest-timer-note,
+.rest-timer-status { margin: 0; }
+
+@media (max-width: 720px) {
+  .quick-add-page .rest-timer-card {
+    position: sticky;
+    bottom: .5rem;
+    z-index: 20;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+  }
+
+  .rest-timer-heading { align-items: center; }
+  .rest-timer-clock { font-size: 2.25rem; }
+  .rest-timer-actions .button { flex: 1 1 auto; }
+}
