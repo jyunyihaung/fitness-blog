@@ -83,5 +83,7 @@ function setupQuickAddTimer() {
   });
 }
 
-setupRecordTimer();
-setupQuickAddTimer();
+if (typeof document !== "undefined") {
+  setupRecordTimer();
+  setupQuickAddTimer();
+}
