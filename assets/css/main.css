@@ -1,1 +1,66 @@
-PLACEHOLDER
+@import url("https://raw.githubusercontent.com/jyunyihaung/fitness-blog/2ec186ba6214dad466bdcf92f09f3d51df156730/assets/css/main.css");
+
+.inline-rest {
+  display: grid;
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  gap: var(--space-2);
+}
+
+.inline-rest-summary,
+.inline-rest-active,
+.inline-rest-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.inline-rest-summary {
+  justify-content: space-between;
+  color: var(--color-muted);
+}
+
+.inline-rest-active {
+  flex-wrap: wrap;
+}
+
+.inline-rest-clock {
+  min-width: 5.5rem;
+  color: var(--color-accent-strong);
+  font-size: 1.75rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.inline-rest-actions {
+  flex-wrap: wrap;
+}
+
+.inline-rest-status {
+  width: 100%;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+}
+
+.inline-rest[data-rest-state="finished"] .inline-rest-summary {
+  color: var(--color-accent-strong);
+  font-weight: 700;
+}
+
+@media (max-width: 44rem) {
+  .inline-rest-summary,
+  .inline-rest-active {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .inline-rest-summary .button,
+  .inline-rest-actions .button {
+    flex: 1 1 auto;
+  }
+
+  .inline-rest-clock {
+    text-align: center;
+  }
+}
