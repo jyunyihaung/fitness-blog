@@ -15,6 +15,7 @@ const modeOutput = document.querySelector("[data-mode-choices]");
 const generateButton = document.querySelector("[data-generate-workout]");
 const manualPanel = document.querySelector("[data-manual-one-rm]");
 const manualInput = document.querySelector("[data-reference-one-rm]");
+const warmupInput = document.querySelector("[data-include-warmup]");
 const errorOutput = document.querySelector("[data-quick-error]");
 const preview = document.querySelector("[data-workout-preview]");
 const connectionOutput = document.querySelector("[data-quick-connection]");
@@ -151,12 +152,16 @@ async function loadCurrentData(spreadsheet) {
 function renderPreview(draft, reference) {
   const lift = QUICK_ADD_LIFTS[draft.quickAdd.liftId];
   const mode = TRAINING_MODES[draft.quickAdd.modeId];
+  const warmupSets = draft.exercises[0]?.sets.filter((set) => set.isWarmup || set.type === "warmup") ?? [];
   document.querySelector("[data-preview-lift]").textContent = `${lift.name} / ${lift.label}`;
   document.querySelector("[data-preview-reference]").textContent = `${reference.value} kg`;
   document.querySelector("[data-preview-source]").textContent = SOURCE_LABELS[reference.source];
   document.querySelector("[data-preview-mode]").textContent = `${mode.englishLabel} / ${mode.label}`;
   document.querySelector("[data-preview-preset]").textContent = `${mode.preset.intensity * 100}% 1RM`;
   document.querySelector("[data-preview-workout]").textContent = `${draft.quickAdd.weight} kg × ${mode.preset.reps} reps × ${mode.preset.sets} sets`;
+  document.querySelector("[data-preview-warmup]").textContent = warmupSets.length
+    ? `${warmupSets.length} 組 · ${warmupSets.map((set) => `${set.weightKg} kg × ${set.reps}`).join(" → ")}`
+    : "未加入";
   editor.load(draft.exercises);
   updateTrainingWarning();
   durationInput.value = draft.durationMinutes || "5";
@@ -319,6 +324,7 @@ async function generateWorkout() {
       modeId: selectedMode,
       referenceOneRepMax: reference.value,
       trainingDate: localDateString(),
+      includeWarmup: warmupInput.checked,
     });
     renderPreview(generatedDraft, reference);
   } catch (error) {
@@ -354,6 +360,7 @@ referenceModeInputs.forEach((input) => input.addEventListener("change", () => {
   if (manual) manualInput.focus();
 }));
 manualInput.addEventListener("input", () => { preview.hidden = true; });
+warmupInput.addEventListener("change", () => { preview.hidden = true; });
 document.querySelector("[data-quick-add-exercise]").addEventListener("click", () => {
   const exercise = editor.addExercise();
   exercise.querySelector("[data-exercise-name]").focus();
