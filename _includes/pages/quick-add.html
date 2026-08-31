@@ -75,6 +75,14 @@
     </aside>
   </section>
 
+  <section class="quick-add-step" aria-labelledby="quick-warmup-title">
+    <div class="step-heading"><span>4</span><h2 id="quick-warmup-title">暖身組</h2></div>
+    <label class="choice-card reference-choice">
+      <input type="checkbox" data-include-warmup checked>
+      <span><strong>自動加入暖身組</strong><small>依工作重量產生漸進暖身組；產生後仍可自由修改或刪除。</small></span>
+    </label>
+  </section>
+
   <div class="validation-summary" data-quick-error role="alert" hidden></div>
   <button class="button primary quick-generate-button" type="button" data-generate-workout>產生訓練建議</button>
 
@@ -90,6 +98,7 @@
       <div><dt>模式</dt><dd data-preview-mode></dd></div>
       <div><dt>預設</dt><dd data-preview-preset></dd></div>
       <div><dt>建議內容</dt><dd data-preview-workout></dd></div>
+      <div><dt>暖身</dt><dd data-preview-warmup></dd></div>
     </dl>
     <section class="form-section" aria-labelledby="quick-exercises-title">
       <div class="form-section-header">
