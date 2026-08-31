@@ -109,10 +109,20 @@ export const TRAINING_MODES = {
   },
 };
 
+export const WARMUP_PROFILE = [
+  { kind: "bar", reps: 10 },
+  { ratio: 0.4, reps: 5 },
+  { ratio: 0.6, reps: 3 },
+  { ratio: 0.75, reps: 2 },
+  { ratio: 0.85, reps: 1 },
+];
+
 export function getTrainingModeWarnings(modeId, exercises, referenceOneRepMax) {
   const warning = TRAINING_MODES[modeId]?.warning;
   if (!warning) return [];
-  const sets = (exercises ?? []).flatMap((exercise) => exercise.sets ?? []);
+  const sets = (exercises ?? [])
+    .flatMap((exercise) => exercise.sets ?? [])
+    .filter((set) => !set.isWarmup && set.type !== "warmup");
   const hasHighReps = warning.maxReps && sets.some((set) => Number(set.reps) > warning.maxReps);
   const hasStrengthBias = warning.maxIntensity && sets.some((set) => {
     const intensity = Number(set.weightKg) / Number(referenceOneRepMax);
@@ -163,6 +173,40 @@ export function roundWeight(weight, increment = 0.5) {
   return Math.round(number / step) * step;
 }
 
+function limitLightWarmups(sets, workingWeightKg) {
+  if (workingWeightKg >= 50 || sets.length <= 3) return sets;
+  const middleIndex = Math.floor((sets.length - 1) / 2);
+  return [sets[0], sets[middleIndex], sets[sets.length - 1]]
+    .filter((set, index, list) => index === 0 || set.weightKg !== list[index - 1].weightKg);
+}
+
+export function generateWarmupSets({ workingWeightKg, barWeightKg = 20, incrementKg = 2.5 } = {}) {
+  const workingWeight = Number(workingWeightKg);
+  const barWeight = Number(barWeightKg);
+  if (!Number.isFinite(workingWeight) || workingWeight <= 0) return [];
+  if (!Number.isFinite(barWeight) || barWeight < 0 || barWeight >= workingWeight) return [];
+
+  const sets = [];
+  WARMUP_PROFILE.forEach((stage) => {
+    const rawWeight = stage.kind === "bar" ? barWeight : workingWeight * stage.ratio;
+    const rounded = stage.kind === "bar" ? barWeight : roundWeight(rawWeight, incrementKg);
+    if (rounded === null) return;
+    const weight = Math.max(barWeight, rounded);
+    if (weight >= workingWeight) return;
+    if (sets.some((set) => set.weightKg === weight)) return;
+    sets.push({
+      weightKg: weight,
+      reps: stage.reps,
+      rpe: "",
+      type: "warmup",
+      isWarmup: true,
+      notes: "",
+    });
+  });
+
+  return limitLightWarmups(sets, workingWeight);
+}
+
 export function parseManualOneRepMax(value) {
   const number = Number(value);
   if (value === "" || !Number.isFinite(number) || number <= 0) return null;
@@ -170,7 +214,7 @@ export function parseManualOneRepMax(value) {
   return number;
 }
 
-export function generateQuickAddDraft({ liftId, modeId, referenceOneRepMax, trainingDate, durationMinutes = "5" }) {
+export function generateQuickAddDraft({ liftId, modeId, referenceOneRepMax, trainingDate, durationMinutes = "5", includeWarmup = false }) {
   const lift = QUICK_ADD_LIFTS[liftId];
   const mode = TRAINING_MODES[modeId];
   const reference = Number(referenceOneRepMax);
@@ -184,22 +228,28 @@ export function generateQuickAddDraft({ liftId, modeId, referenceOneRepMax, trai
   const weight = roundWeight(reference * intensity);
   if (weight === null || !Number.isFinite(weight)) throw new Error("無法計算建議重量。");
 
+  const warmupSets = includeWarmup ? generateWarmupSets({ workingWeightKg: weight }) : [];
+  const workingSets = Array.from({ length: sets }, () => ({
+    weightKg: String(weight),
+    reps: String(reps),
+    rpe: String(rpe),
+    type: "working",
+    isWarmup: false,
+    notes: "",
+  }));
+
   return {
     trainingDate,
     title: `${lift.name} · ${mode.englishLabel}`,
     durationMinutes: String(durationMinutes),
-    quickAdd: { liftId, modeId, referenceOneRepMax: reference, intensity, weight },
+    quickAdd: { liftId, modeId, referenceOneRepMax: reference, intensity, weight, includeWarmup },
     exercises: [{
       name: lift.name,
       category: lift.id,
-      sets: Array.from({ length: sets }, () => ({
-        weightKg: String(weight),
-        reps: String(reps),
-        rpe: String(rpe),
-        type: "working",
-        isWarmup: false,
-        notes: "",
-      })),
+      sets: [
+        ...warmupSets.map((set) => ({ ...set, weightKg: String(set.weightKg), reps: String(set.reps) })),
+        ...workingSets,
+      ],
     }],
   };
 }
