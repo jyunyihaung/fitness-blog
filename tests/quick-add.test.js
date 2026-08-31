@@ -1,14 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { resolveReferenceOneRepMax } from "../assets/js/one-rep-max.js";
-import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, parseManualOneRepMax, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
+import { createQuickAddShareInput, generateQuickAddDraft, generateWarmupSets, getTrainingModeWarnings, parseManualOneRepMax, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "../assets/js/record-validation.js";
 
-function generate(modeId, referenceOneRepMax = 100) {
+function generate(modeId, referenceOneRepMax = 100, includeWarmup = false) {
   return generateQuickAddDraft({
     liftId: "squat",
     modeId,
     referenceOneRepMax,
     trainingDate: "2026-08-21",
+    includeWarmup,
   });
 }
 
@@ -87,6 +88,70 @@ describe("Quick Add prescription generation", () => {
     expect(input.durationMinutes).toBe("75");
     expect(input.notes).toContain("訓練目的：");
     expect(input.notes).toContain("組間休息：");
+    expect(validateWorkoutInput(input)).toEqual([]);
+  });
+});
+
+describe("Quick Add warm-up V1", () => {
+  it("builds progressive warm-up sets from working weight with 2.5 kg rounding", () => {
+    const sets = generateWarmupSets({ workingWeightKg: 100 });
+    expect(sets.map((set) => [set.weightKg, set.reps])).toEqual([
+      [20, 10],
+      [40, 5],
+      [60, 3],
+      [75, 2],
+      [85, 1],
+    ]);
+    expect(sets.every((set) => set.isWarmup && set.type === "warmup" && set.rpe === "")).toBe(true);
+  });
+
+  it("deduplicates light warm-ups and never reaches the working weight", () => {
+    const sets = generateWarmupSets({ workingWeightKg: 40 });
+    expect(sets.length).toBeLessThanOrEqual(3);
+    expect(new Set(sets.map((set) => set.weightKg)).size).toBe(sets.length);
+    expect(sets.every((set) => set.weightKg < 40)).toBe(true);
+  });
+
+  it("returns no warm-up when working weight is at or below the bar weight", () => {
+    expect(generateWarmupSets({ workingWeightKg: 20 })).toEqual([]);
+    expect(generateWarmupSets({ workingWeightKg: 15 })).toEqual([]);
+  });
+
+  it("prepends warm-up sets before the existing working sets when enabled", () => {
+    const draft = generate("strength", 100, true);
+    const sets = draft.exercises[0].sets;
+    const warmups = sets.filter((set) => set.isWarmup);
+    const working = sets.filter((set) => !set.isWarmup);
+    expect(warmups.length).toBeGreaterThan(0);
+    expect(working).toHaveLength(4);
+    expect(sets.slice(0, warmups.length).every((set) => set.type === "warmup")).toBe(true);
+    expect(working.every((set) => set.type === "working")).toBe(true);
+  });
+
+  it("persists warm-up flags through the existing Sessions/Sets record pipeline", () => {
+    const draft = generate("strength", 100, true);
+    expect(validateWorkoutInput(draft)).toEqual([]);
+    const records = createWorkoutRecords(draft);
+    const warmups = records.sets.filter((set) => set.is_warmup === "true");
+    expect(warmups.length).toBeGreaterThan(0);
+    expect(warmups.every((set) => set.set_type === "warmup")).toBe(true);
+    expect(records.sets.map((set) => Number(set.set_order))).toEqual(
+      Array.from({ length: records.sets.length }, (_, index) => index + 1),
+    );
+  });
+
+  it("does not let warm-up reps trigger training-mode divergence warnings", () => {
+    const draft = generate("strength", 100, true);
+    expect(draft.exercises[0].sets.some((set) => set.isWarmup && Number(set.reps) > 8)).toBe(true);
+    expect(getTrainingModeWarnings("strength", draft.exercises, 100)).toEqual([]);
+  });
+
+  it("keeps warm-up metadata in Quick Add share export", () => {
+    const draft = generate("strength", 100, true);
+    const input = createQuickAddShareInput(draft, draft.exercises, "60");
+    const warmups = input.exercises[0].sets.filter((set) => set.isWarmup);
+    expect(warmups.length).toBeGreaterThan(0);
+    expect(warmups.every((set) => set.type === "warmup")).toBe(true);
     expect(validateWorkoutInput(input)).toEqual([]);
   });
 });
