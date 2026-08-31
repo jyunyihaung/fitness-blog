@@ -36,5 +36,21 @@
       <label class="field"><span>備註</span><textarea data-set-notes rows="2" maxlength="500"></textarea></label>
       <button class="button danger-button compact-button" type="button" data-remove-set>刪除</button>
     </div>
+    <div class="inline-rest" data-inline-rest data-rest-state="idle">
+      <div class="inline-rest-summary">
+        <span>組間休息 <strong data-inline-rest-default>02:00</strong></span>
+        <button class="button compact-button" type="button" data-inline-rest-start>開始</button>
+      </div>
+      <div class="inline-rest-active" data-inline-rest-active hidden>
+        <strong class="inline-rest-clock" data-inline-rest-time>02:00</strong>
+        <div class="inline-rest-actions">
+          <button class="button compact-button" type="button" data-inline-rest-minus>-30 秒</button>
+          <button class="button compact-button" type="button" data-inline-rest-pause>暫停</button>
+          <button class="button compact-button" type="button" data-inline-rest-plus>+30 秒</button>
+          <button class="button compact-button" type="button" data-inline-rest-reset>重設</button>
+        </div>
+        <span class="inline-rest-status" data-inline-rest-status role="status" aria-live="polite"></span>
+      </div>
+    </div>
   </fieldset>
 </template>
