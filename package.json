@@ -12,7 +12,9 @@
     "test:watch": "vitest",
     "build": "JEKYLL_ENV=production bundle exec jekyll build --destination ${TMPDIR:-/tmp}/fitness-blog-build",
     "check": "npm run lint && npm test",
-    "verify": "npm run check && npm run build"
+    "test:e2e": "npx --yes @playwright/test@1.55.0 test",
+    "test:e2e:install": "npx --yes playwright@1.55.0 install chromium",
+    "verify": "npm run check && npm run build && npm run test:e2e"
   },
   "devDependencies": {
     "eslint": "^10.9.1",
