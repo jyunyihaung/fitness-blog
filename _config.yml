@@ -40,6 +40,11 @@ navigation:
 
 exclude:
   - node_modules
+  - vendor
+  - .bundle
+  - .github
+  - playwright-report
+  - test-results
   - AGENTS.md
   - ARCHITECTURE.md
   - DATA_MODEL.md
