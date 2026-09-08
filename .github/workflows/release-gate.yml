@@ -31,6 +31,9 @@ jobs:
       - name: Install Node dependencies
         run: npm ci
 
+      - name: Install Playwright test runner
+        run: npm install --no-save @playwright/test@1.55.0
+
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -38,7 +41,7 @@ jobs:
           bundler-cache: true
 
       - name: Install Playwright Chromium
-        run: npx --yes playwright@1.55.0 install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Run Release Gate V2
         run: npm run verify
