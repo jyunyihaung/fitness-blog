@@ -321,7 +321,7 @@ export function generateQuickAddDraft({ liftId, modeId, referenceOneRepMax, trai
   if (!Number.isFinite(intensity) || intensity <= 0 || intensity > 1) throw new Error("訓練強度設定無效。");
   if (!Number.isInteger(reps) || reps < 1) throw new Error("訓練次數設定無效。");
   if (!Number.isInteger(sets) || sets < 1) throw new Error("訓練組數設定無效。");
-  const weight = roundWeight(reference * intensity, 2.5);
+  const weight = roundWeight(reference * intensity, liftId === "deadlift" ? 2.5 : 0.5);
   if (weight === null || !Number.isFinite(weight)) throw new Error("無法計算建議重量。");
 
   const warmupSets = includeWarmup ? generateWarmupSets({ workingWeightKg: weight, liftId }) : [];
