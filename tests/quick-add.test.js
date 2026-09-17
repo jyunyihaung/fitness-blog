@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { resolveReferenceOneRepMax } from "../assets/js/one-rep-max.js";
-import { createQuickAddShareInput, generateQuickAddDraft, generateWarmupSets, getTrainingModeWarnings, parseManualOneRepMax, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
+import { createQuickAddShareInput, generateQuickAddDraft, generateWarmupSets, getTrainingModeWarnings, getTrainingPrescription, parseManualOneRepMax, roundWeight, TRAINING_MODES } from "../assets/js/quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "../assets/js/record-validation.js";
 
-function generate(modeId, referenceOneRepMax = 100, includeWarmup = false) {
+function generate(modeId, referenceOneRepMax = 100, includeWarmup = false, liftId = "squat") {
   return generateQuickAddDraft({
-    liftId: "squat",
+    liftId,
     modeId,
     referenceOneRepMax,
     trainingDate: "2026-08-21",
@@ -31,9 +31,9 @@ describe("Quick Add prescription generation", () => {
     expect(generate("strength").quickAdd.weight).toBe(85);
   });
 
-  it("calculates 70 kg × 70% as 49 kg using the 0.5 kg increment", () => {
+  it("rounds generated working weights to the nearest 2.5 kg", () => {
     expect(roundWeight(70 * 0.7)).toBe(49);
-    expect(generate("hypertrophy", 70).quickAdd.weight).toBe(49);
+    expect(generate("hypertrophy", 70).quickAdd.weight).toBe(50);
   });
 
   it.each([
@@ -92,6 +92,55 @@ describe("Quick Add prescription generation", () => {
   });
 });
 
+describe("Deadlift Quick Add V1", () => {
+  it.each([
+    ["strength", 0.825, 3, 3, 8],
+    ["hypertrophy", 0.7, 6, 3, 8],
+    ["strengthHypertrophy", 0.75, 5, 3, 8],
+    ["volume", 0.625, 4, 4, 6],
+    ["endurance", 0.5, 8, 3, 7],
+    ["power", 0.6, 2, 6, 6],
+  ])("uses deadlift-specific %s prescription", (modeId, intensity, reps, sets, rpe) => {
+    const prescription = getTrainingPrescription("deadlift", modeId);
+    expect(prescription.preset).toEqual({ intensity, reps, sets, rpe });
+    const draft = generate(modeId, 115, false, "deadlift");
+    expect(draft.exercises[0].sets).toHaveLength(sets);
+    expect(draft.exercises[0].sets.every((set) => Number(set.reps) === reps)).toBe(true);
+    expect(draft.exercises[0].sets.every((set) => Number(set.rpe) === rpe)).toBe(true);
+  });
+
+  it.each([
+    ["strength", 95],
+    ["hypertrophy", 80],
+    ["strengthHypertrophy", 85],
+    ["volume", 72.5],
+    ["endurance", 57.5],
+    ["power", 70],
+  ])("generates the expected deadlift %s working weight for 115 kg 1RM", (modeId, weight) => {
+    expect(generate(modeId, 115, false, "deadlift").quickAdd.weight).toBe(weight);
+  });
+
+  it("keeps squat and bench on the shared training-mode prescription", () => {
+    expect(getTrainingPrescription("squat", "strength").preset).toEqual(TRAINING_MODES.strength.preset);
+    expect(getTrainingPrescription("bench", "hypertrophy").preset).toEqual(TRAINING_MODES.hypertrophy.preset);
+  });
+
+  it("uses deadlift-specific warnings", () => {
+    const draft = generate("power", 115, false, "deadlift");
+    draft.exercises[0].sets[0].reps = "5";
+    expect(getTrainingModeWarnings("power", draft.exercises, 115, "deadlift")).toEqual([
+      "硬舉爆發力模式建議維持 1–3 reps；更高 reps 容易因疲勞降低槓速。",
+    ]);
+  });
+
+  it("exports deadlift-specific rest and technique guidance", () => {
+    const draft = generate("volume", 115, false, "deadlift");
+    const input = createQuickAddShareInput(draft, draft.exercises, "45");
+    expect(input.notes).toContain("約 2 分 30 秒");
+    expect(input.notes).toContain("dead stop");
+  });
+});
+
 describe("Quick Add warm-up V1", () => {
   it("builds progressive warm-up sets from working weight with 2.5 kg rounding", () => {
     const sets = generateWarmupSets({ workingWeightKg: 100 });
@@ -103,6 +152,18 @@ describe("Quick Add warm-up V1", () => {
       [85, 1],
     ]);
     expect(sets.every((set) => set.isWarmup && set.type === "warmup" && set.rpe === "")).toBe(true);
+  });
+
+  it("builds deadlift warm-ups without an empty-bar set and never reaches working weight", () => {
+    const sets = generateWarmupSets({ workingWeightKg: 95, liftId: "deadlift" });
+    expect(sets.map((set) => [set.weightKg, set.reps])).toEqual([
+      [37.5, 5],
+      [57.5, 5],
+      [72.5, 3],
+      [80, 2],
+      [87.5, 1],
+    ]);
+    expect(sets.every((set) => set.weightKg < 95)).toBe(true);
   });
 
   it("deduplicates light warm-ups and never reaches the working weight", () => {
