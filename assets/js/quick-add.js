@@ -109,6 +109,88 @@ export const TRAINING_MODES = {
   },
 };
 
+export const DEADLIFT_MODE_OVERRIDES = {
+  strength: {
+    intensityRange: [0.8, 0.875], repsRange: [2, 4], setsRange: [2, 4], rpeRange: [7, 8],
+    preset: { intensity: 0.825, reps: 3, sets: 3, rpe: 8 },
+    rest: "約 4 分鐘；重組可延長至 5 分鐘，下一組前先恢復呼吸、握力與核心張力。",
+    shortTip: "每一下重新建立腹壓與起槓姿勢；以穩定鎖定為優先，最後一組盡量維持 RPE 8 以下。",
+    tips: [
+      "每一下都從穩定的起始位置重新建立腹壓，不要因疲勞縮短 setup。",
+      "高重量工作組以 2–4 reps 為主，避免用增加組數堆高不必要的下背與握力疲勞。",
+      "鎖定時維持軀幹穩定，不要以過度後仰完成動作。",
+      "若第二組已接近 RPE 9，優先停止增加組數，而不是硬做完模板。",
+    ],
+    warning: { maxReps: 5, message: "硬舉最大肌力模式建議維持低次數；目前 reps 偏高，疲勞可能快速增加。" },
+  },
+  hypertrophy: {
+    intensityRange: [0.65, 0.725], repsRange: [5, 8], setsRange: [2, 4], rpeRange: [7, 8],
+    preset: { intensity: 0.7, reps: 6, sets: 3, rpe: 8 },
+    rest: "約 2 分 30 秒；若呼吸、握力或下背尚未恢復，可延長休息。",
+    shortTip: "用可控制的重量累積有效次數；傳統硬舉不以 10–12+ reps 作為預設肌肥大處方。",
+    tips: [
+      "以 5–8 reps 為主，避免高次數讓訓練重點轉成心肺、握力或下背耐力。",
+      "每一下保持相同起始位置與槓鈴路徑，動作開始明顯變形就提前結束該組。",
+      "若主要目標是更高次數的後鏈肌肥大，未來可優先使用 RDL 等變化式，而不是提高傳統硬舉 reps。",
+    ],
+    warning: { maxReps: 8, message: "傳統硬舉肌肥大模式建議控制在 8 reps 以內，以降低高疲勞下的技術劣化。" },
+  },
+  strengthHypertrophy: {
+    intensityRange: [0.725, 0.8], repsRange: [4, 6], setsRange: [3, 3], rpeRange: [7, 8],
+    preset: { intensity: 0.75, reps: 5, sets: 3, rpe: 8 },
+    rest: "約 3 分鐘；依最後一組 RPE 與握力恢復程度彈性延長。",
+    shortTip: "兼顧力量與訓練量；維持 4–6 reps，避免後段為了完成次數犧牲起槓姿勢。",
+    tips: [
+      "中等偏重重量搭配 3 組工作組，兼顧負重與總訓練量。",
+      "每一下保持與力量訓練相同的 setup、腹壓與鎖定品質。",
+      "若後段組數明顯接近 RPE 9，優先維持重量或減少訓練量，不要額外加組。",
+    ],
+  },
+  volume: {
+    intensityRange: [0.55, 0.675], repsRange: [3, 5], setsRange: [3, 5], rpeRange: [5, 7],
+    preset: { intensity: 0.625, reps: 4, sets: 4, rpe: 6 },
+    rest: "約 2 分 30 秒；目標是保持每組技術一致，而不是壓縮休息。",
+    shortTip: "使用多組低 reps 練習 setup → brace → pull → lockout → reset，每一下採 dead stop。",
+    tips: [
+      "每一下完全停地後重新建立姿勢，不使用反彈連續拉。",
+      "重點是重複高品質 setup、腹壓與起槓路徑，而不是單組做到很累。",
+      "若後段組數技術開始改變，降低重量或停止增加訓練量。",
+    ],
+  },
+  endurance: {
+    intensityRange: [0.45, 0.55], repsRange: [6, 10], setsRange: [2, 3], rpeRange: [6, 7],
+    preset: { intensity: 0.5, reps: 8, sets: 3, rpe: 7 },
+    rest: "約 2 分鐘；若姿勢或呼吸尚未恢復，不要為了縮短休息而急著開始下一組。",
+    shortTip: "在動作品質穩定的前提下累積工作量；握力、下背或姿勢明顯失控就提前結束該組。",
+    tips: [
+      "傳統硬舉不以 12–20 reps 作為預設肌耐力處方。",
+      "以 6–10 reps 累積穩定工作量，避免後半組變成單純心肺或握力測試。",
+      "如果局部疲勞使槓鈴路徑或軀幹位置無法維持，立即停止該組。",
+    ],
+    warning: { maxReps: 10, message: "硬舉肌耐力模式建議維持 10 reps 以內，以避免疲勞造成技術失控。" },
+  },
+  power: {
+    intensityRange: [0.5, 0.65], repsRange: [1, 3], setsRange: [4, 8], rpeRange: [0, 7],
+    preset: { intensity: 0.6, reps: 2, sets: 6, rpe: 6 },
+    rest: "約 2 分 30 秒；若槓速開始下降，可延長休息或提早結束。",
+    shortTip: "每一下 dead stop 後重新 setup 並快速起槓；速度明顯下降就停止，不用增加 reps。",
+    tips: [
+      "每一下完全停地後重新建立起始姿勢，再以最大加速意圖起槓。",
+      "維持 1–3 reps 的低次數，避免 Speed Training 因疲勞變成容量訓練。",
+      "進展優先小幅增加重量，而不是增加單組 reps。",
+      "如果連續幾組槓速下降，延長休息或停止訓練。",
+    ],
+    warning: { maxReps: 3, message: "硬舉爆發力模式建議維持 1–3 reps；更高 reps 容易因疲勞降低槓速。" },
+  },
+};
+
+export function getTrainingPrescription(liftId, modeId) {
+  const mode = TRAINING_MODES[modeId];
+  if (!mode) return null;
+  if (liftId !== "deadlift") return mode;
+  return { ...mode, ...(DEADLIFT_MODE_OVERRIDES[modeId] ?? {}) };
+}
+
 export const WARMUP_PROFILE = [
   { kind: "bar", reps: 10 },
   { ratio: 0.4, reps: 5 },
@@ -117,8 +199,16 @@ export const WARMUP_PROFILE = [
   { ratio: 0.85, reps: 1 },
 ];
 
-export function getTrainingModeWarnings(modeId, exercises, referenceOneRepMax) {
-  const warning = TRAINING_MODES[modeId]?.warning;
+export const DEADLIFT_WARMUP_PROFILE = [
+  { ratio: 0.4, reps: 5 },
+  { ratio: 0.6, reps: 5 },
+  { ratio: 0.75, reps: 3 },
+  { ratio: 0.85, reps: 2 },
+  { ratio: 0.925, reps: 1 },
+];
+
+export function getTrainingModeWarnings(modeId, exercises, referenceOneRepMax, liftId = "") {
+  const warning = getTrainingPrescription(liftId, modeId)?.warning;
   if (!warning) return [];
   const sets = (exercises ?? [])
     .flatMap((exercise) => exercise.sets ?? [])
@@ -132,8 +222,8 @@ export function getTrainingModeWarnings(modeId, exercises, referenceOneRepMax) {
 }
 
 export function createQuickAddShareInput(draft, exercises, durationMinutes) {
-  const mode = TRAINING_MODES[draft?.quickAdd?.modeId];
-  if (!mode) throw new Error("請先產生有效的訓練建議。");
+  const prescription = getTrainingPrescription(draft?.quickAdd?.liftId, draft?.quickAdd?.modeId);
+  if (!prescription) throw new Error("請先產生有效的訓練建議。");
   const cleanExercises = (exercises ?? []).map((exercise) => ({
     name: exercise.name,
     category: exercise.category,
@@ -146,15 +236,20 @@ export function createQuickAddShareInput(draft, exercises, durationMinutes) {
       notes: set.notes,
     })),
   }));
-  const warnings = getTrainingModeWarnings(draft.quickAdd.modeId, cleanExercises, draft.quickAdd.referenceOneRepMax);
-  const rpe = mode.rpeRange[0] === 0 ? `RPE ≤ ${mode.rpeRange[1]}` : `RPE ${mode.rpeRange.join("–")}`;
+  const warnings = getTrainingModeWarnings(
+    draft.quickAdd.modeId,
+    cleanExercises,
+    draft.quickAdd.referenceOneRepMax,
+    draft.quickAdd.liftId,
+  );
+  const rpe = prescription.rpeRange[0] === 0 ? `RPE ≤ ${prescription.rpeRange[1]}` : `RPE ${prescription.rpeRange.join("–")}`;
   const notes = [
-    `訓練模式：${mode.englishLabel} / ${mode.label}`,
-    `訓練目的：${mode.goal}`,
+    `訓練模式：${prescription.englishLabel} / ${prescription.label}`,
+    `訓練目的：${prescription.goal}`,
     `目標強度：${rpe}`,
-    `組間休息：${mode.rest}`,
-    `動作要點：${mode.shortTip}`,
-    ...mode.tips.map((tip) => `・${tip}`),
+    `組間休息：${prescription.rest}`,
+    `動作要點：${prescription.shortTip}`,
+    ...prescription.tips.map((tip) => `・${tip}`),
     ...warnings.map((warning) => `目前設定提醒：${warning}`),
   ].join("\n");
   return {
@@ -180,14 +275,15 @@ function limitLightWarmups(sets, workingWeightKg) {
     .filter((set, index, list) => index === 0 || set.weightKg !== list[index - 1].weightKg);
 }
 
-export function generateWarmupSets({ workingWeightKg, barWeightKg = 20, incrementKg = 2.5 } = {}) {
+export function generateWarmupSets({ workingWeightKg, barWeightKg = 20, incrementKg = 2.5, liftId = "" } = {}) {
   const workingWeight = Number(workingWeightKg);
   const barWeight = Number(barWeightKg);
   if (!Number.isFinite(workingWeight) || workingWeight <= 0) return [];
   if (!Number.isFinite(barWeight) || barWeight < 0 || barWeight >= workingWeight) return [];
 
+  const profile = liftId === "deadlift" ? DEADLIFT_WARMUP_PROFILE : WARMUP_PROFILE;
   const sets = [];
-  WARMUP_PROFILE.forEach((stage) => {
+  profile.forEach((stage) => {
     const rawWeight = stage.kind === "bar" ? barWeight : workingWeight * stage.ratio;
     const rounded = stage.kind === "bar" ? barWeight : roundWeight(rawWeight, incrementKg);
     if (rounded === null) return;
@@ -216,19 +312,19 @@ export function parseManualOneRepMax(value) {
 
 export function generateQuickAddDraft({ liftId, modeId, referenceOneRepMax, trainingDate, durationMinutes = "5", includeWarmup = false }) {
   const lift = QUICK_ADD_LIFTS[liftId];
-  const mode = TRAINING_MODES[modeId];
+  const prescription = getTrainingPrescription(liftId, modeId);
   const reference = Number(referenceOneRepMax);
   if (!lift) throw new Error("請選擇有效的健力項目。");
-  if (!mode) throw new Error("請選擇有效的訓練模式。");
+  if (!prescription) throw new Error("請選擇有效的訓練模式。");
   if (!Number.isFinite(reference) || reference <= 0) throw new Error("請提供大於 0 的參考 1RM。");
-  const { intensity, reps, sets, rpe } = mode.preset;
+  const { intensity, reps, sets, rpe } = prescription.preset;
   if (!Number.isFinite(intensity) || intensity <= 0 || intensity > 1) throw new Error("訓練強度設定無效。");
   if (!Number.isInteger(reps) || reps < 1) throw new Error("訓練次數設定無效。");
   if (!Number.isInteger(sets) || sets < 1) throw new Error("訓練組數設定無效。");
-  const weight = roundWeight(reference * intensity);
+  const weight = roundWeight(reference * intensity, 2.5);
   if (weight === null || !Number.isFinite(weight)) throw new Error("無法計算建議重量。");
 
-  const warmupSets = includeWarmup ? generateWarmupSets({ workingWeightKg: weight }) : [];
+  const warmupSets = includeWarmup ? generateWarmupSets({ workingWeightKg: weight, liftId }) : [];
   const workingSets = Array.from({ length: sets }, () => ({
     weightKg: String(weight),
     reps: String(reps),
@@ -240,9 +336,17 @@ export function generateQuickAddDraft({ liftId, modeId, referenceOneRepMax, trai
 
   return {
     trainingDate,
-    title: `${lift.name} · ${mode.englishLabel}`,
+    title: `${lift.name} · ${prescription.englishLabel}`,
     durationMinutes: String(durationMinutes),
-    quickAdd: { liftId, modeId, referenceOneRepMax: reference, intensity, weight, includeWarmup },
+    quickAdd: {
+      liftId,
+      modeId,
+      referenceOneRepMax: reference,
+      intensity,
+      weight,
+      includeWarmup,
+      prescription: { reps, sets, rpe, rest: prescription.rest, rpeRange: prescription.rpeRange },
+    },
     exercises: [{
       name: lift.name,
       category: lift.id,
