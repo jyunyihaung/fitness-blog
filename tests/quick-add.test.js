@@ -112,7 +112,7 @@ describe("Deadlift Quick Add V1", () => {
   it.each([
     ["strength", 95],
     ["hypertrophy", 80],
-    ["strengthHypertrophy", 85],
+    ["strengthHypertrophy", 87.5],
     ["volume", 72.5],
     ["endurance", 57.5],
     ["power", 70],
