@@ -9,6 +9,15 @@ export const QUICK_ADD_REST_SECONDS = {
   power: 180,
 };
 
+export const DEADLIFT_QUICK_ADD_REST_SECONDS = {
+  strength: 240,
+  hypertrophy: 150,
+  strengthHypertrophy: 180,
+  volume: 150,
+  endurance: 120,
+  power: 150,
+};
+
 export const WARMUP_REST_SECONDS = 90;
 export const ADD_RECORD_REST_SECONDS = 120;
 
@@ -205,19 +214,23 @@ function setupQuickAddTimers() {
   const page = document.querySelector("[data-route-page='/quick-add']");
   if (!page) return;
   let selectedMode = "";
+  let selectedLift = "";
   const manager = createInlineRestManager(page, {
     defaultSeconds: 120,
     autoStartOnComplete: true,
-    getSeconds: (set) => isWarmupSet(set)
-      ? WARMUP_REST_SECONDS
-      : QUICK_ADD_REST_SECONDS[selectedMode] ?? 120,
+    getSeconds: (set) => {
+      if (isWarmupSet(set)) return WARMUP_REST_SECONDS;
+      if (selectedLift === "deadlift") return DEADLIFT_QUICK_ADD_REST_SECONDS[selectedMode] ?? 120;
+      return QUICK_ADD_REST_SECONDS[selectedMode] ?? 120;
+    },
   });
 
   page.addEventListener("click", (event) => {
     const modeChoice = event.target.closest("[data-choice-group='mode']");
-    if (!modeChoice) return;
-    selectedMode = modeChoice.dataset.choiceId || "";
-    window.queueMicrotask(manager.updateDefaults);
+    const liftChoice = event.target.closest("[data-choice-group='lift']");
+    if (modeChoice) selectedMode = modeChoice.dataset.choiceId || "";
+    if (liftChoice) selectedLift = liftChoice.dataset.choiceId || "";
+    if (modeChoice || liftChoice) window.queueMicrotask(manager.updateDefaults);
   });
 }
 
