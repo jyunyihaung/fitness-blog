@@ -31,9 +31,13 @@ describe("Quick Add prescription generation", () => {
     expect(generate("strength").quickAdd.weight).toBe(85);
   });
 
-  it("rounds generated working weights to the nearest 2.5 kg", () => {
+  it("keeps Bench working-weight rounding at the existing 0.5 kg increment", () => {
     expect(roundWeight(70 * 0.7)).toBe(49);
-    expect(generate("hypertrophy", 70).quickAdd.weight).toBe(50);
+    expect(generate("hypertrophy", 70, false, "bench").quickAdd.weight).toBe(49);
+  });
+
+  it("keeps Squat working-weight rounding at the existing 0.5 kg increment", () => {
+    expect(generate("hypertrophy", 71, false, "squat").quickAdd.weight).toBe(49.5);
   });
 
   it.each([
@@ -107,6 +111,10 @@ describe("Deadlift Quick Add V1", () => {
     expect(draft.exercises[0].sets).toHaveLength(sets);
     expect(draft.exercises[0].sets.every((set) => Number(set.reps) === reps)).toBe(true);
     expect(draft.exercises[0].sets.every((set) => Number(set.rpe) === rpe)).toBe(true);
+  });
+
+  it("uses 2.5 kg working-weight increments for Deadlift", () => {
+    expect(generate("hypertrophy", 70, false, "deadlift").quickAdd.weight).toBe(50);
   });
 
   it.each([
