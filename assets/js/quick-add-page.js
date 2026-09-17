@@ -4,7 +4,7 @@ import { getWorkoutData } from "./data.js";
 import { parseGoals } from "./goals.js";
 import { appendWorkoutRecord, readRanges, syncUsedExercises } from "./google-sheets.js";
 import { resolveReferenceOneRepMax } from "./one-rep-max.js";
-import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, parseManualOneRepMax, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
+import { createQuickAddShareInput, generateQuickAddDraft, getTrainingModeWarnings, getTrainingPrescription, parseManualOneRepMax, QUICK_ADD_LIFTS, TRAINING_MODES } from "./quick-add.js";
 import { createWorkoutRecords, validateWorkoutInput } from "./record-validation.js";
 import { createWorkoutEditor } from "./workout-editor.js";
 import { reportAppError, safeErrorMessage } from "./app-error.js";
@@ -78,15 +78,32 @@ function renderChoices() {
   });
 }
 
+function currentPrescription() {
+  return getTrainingPrescription(selectedLift, selectedMode);
+}
+
+function refreshModeChoiceSubtitles() {
+  document.querySelectorAll("[data-choice-group='mode']").forEach((button) => {
+    const mode = getTrainingPrescription(selectedLift, button.dataset.choiceId);
+    const description = button.querySelector("span");
+    if (!mode || !description) return;
+    const preset = mode.preset;
+    description.textContent = `${mode.label} · ${preset.intensity * 100}% · ${preset.reps} reps · ${preset.sets} sets`;
+  });
+}
+
 function selectChoice(button) {
   const group = button.dataset.choiceGroup;
   document.querySelectorAll(`[data-choice-group="${group}"]`).forEach((choice) => {
     choice.setAttribute("aria-pressed", String(choice === button));
   });
-  if (group === "lift") selectedLift = button.dataset.choiceId;
-  else {
+  if (group === "lift") {
+    selectedLift = button.dataset.choiceId;
+    refreshModeChoiceSubtitles();
+    if (selectedMode) renderTrainingGuidance(currentPrescription());
+  } else {
     selectedMode = button.dataset.choiceId;
-    renderTrainingGuidance(TRAINING_MODES[selectedMode]);
+    renderTrainingGuidance(currentPrescription());
   }
   preview.hidden = true;
 }
@@ -96,6 +113,7 @@ function rpeLabel(mode) {
 }
 
 function renderTrainingGuidance(mode) {
+  if (!mode) return;
   document.querySelector("[data-guidance-name]").textContent = `${mode.englishLabel} / ${mode.label}`;
   document.querySelector("[data-guidance-prescription]").textContent = `${mode.preset.intensity * 100}% 1RM · ${mode.preset.reps} reps · ${mode.preset.sets} sets`;
   document.querySelector("[data-guidance-goal]").textContent = mode.goal;
@@ -118,6 +136,7 @@ function updateTrainingWarning() {
     generatedDraft.quickAdd.modeId,
     editor.read(),
     generatedDraft.quickAdd.referenceOneRepMax,
+    generatedDraft.quickAdd.liftId,
   );
   warningOutput.textContent = warnings.join(" ");
   warningOutput.hidden = warnings.length === 0;
@@ -151,14 +170,15 @@ async function loadCurrentData(spreadsheet) {
 
 function renderPreview(draft, reference) {
   const lift = QUICK_ADD_LIFTS[draft.quickAdd.liftId];
-  const mode = TRAINING_MODES[draft.quickAdd.modeId];
+  const mode = getTrainingPrescription(draft.quickAdd.liftId, draft.quickAdd.modeId);
   const warmupSets = draft.exercises[0]?.sets.filter((set) => set.isWarmup || set.type === "warmup") ?? [];
+  const prescription = draft.quickAdd.prescription;
   document.querySelector("[data-preview-lift]").textContent = `${lift.name} / ${lift.label}`;
   document.querySelector("[data-preview-reference]").textContent = `${reference.value} kg`;
   document.querySelector("[data-preview-source]").textContent = SOURCE_LABELS[reference.source];
   document.querySelector("[data-preview-mode]").textContent = `${mode.englishLabel} / ${mode.label}`;
-  document.querySelector("[data-preview-preset]").textContent = `${mode.preset.intensity * 100}% 1RM`;
-  document.querySelector("[data-preview-workout]").textContent = `${draft.quickAdd.weight} kg × ${mode.preset.reps} reps × ${mode.preset.sets} sets`;
+  document.querySelector("[data-preview-preset]").textContent = `${draft.quickAdd.intensity * 100}% 1RM`;
+  document.querySelector("[data-preview-workout]").textContent = `${draft.quickAdd.weight} kg × ${prescription.reps} reps × ${prescription.sets} sets`;
   document.querySelector("[data-preview-warmup]").textContent = warmupSets.length
     ? `${warmupSets.length} 組 · ${warmupSets.map((set) => `${set.weightKg} kg × ${set.reps}`).join(" → ")}`
     : "未加入";
