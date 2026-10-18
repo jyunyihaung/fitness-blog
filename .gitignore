@@ -6,3 +6,7 @@ vendor/
 Gemfile.lock
 node_modules/
 coverage/
+
+# Private coach worksheets and locally normalized workout plans.
+# Never commit identifiable athlete profiles, training logs, or injuries.
+local-coach-plans/
