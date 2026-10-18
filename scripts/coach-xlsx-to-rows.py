@@ -74,9 +74,13 @@ def worksheet_path(book, sheet_name):
     if root is None or rels is None:
         raise ValueError("Workbook metadata is missing")
     mapping = {node.attrib["Id"]: node.attrib["Target"] for node in rels.findall(PR + "Relationship")}
-    for sheet in root.findall(f"{N}sheets/{N}sheet"):
-        if sheet.attrib.get("name") != sheet_name:
-            continue
+    sheets = root.findall(f"{N}sheets/{N}sheet")
+    matches = [s for s in sheets if s.attrib.get("name", "").casefold() == sheet_name.casefold()]
+    if not matches:
+        matches = [s for s in sheets if s.attrib.get("name", "").casefold().endswith("-block1")]
+    if len(matches) != 1:
+        raise ValueError("Expected exactly one Block1 worksheet")
+    for sheet in matches:
         rel_id = sheet.attrib.get(REL + "id")
         target = mapping.get(rel_id, "")
         if target.startswith("/"):
@@ -90,7 +94,7 @@ def worksheet_path(book, sheet_name):
             raise ValueError("Unexpected sheet path")
         props = root.find(N + "workbookPr")
         date1904 = props is not None and props.attrib.get("date1904") in ("1", "true")
-        return path, date1904
+        return path, date1904, sheet.attrib["name"]
     raise ValueError(f"Worksheet {sheet_name!r} was not found")
 
 
@@ -129,7 +133,7 @@ def read_sheet(path):
     with zipfile.ZipFile(path) as book:
         if sum(info.file_size for info in book.infolist()) > 80 * MAX_BYTES:
             raise ValueError("Uncompressed workbook is too large")
-        part, date1904 = worksheet_path(book, "Block1")
+        part, date1904, sheet_name = worksheet_path(book, "Block1")
         root = read_xml(book, part)
         if root is None:
             raise ValueError("Block1 worksheet is missing")
@@ -159,7 +163,7 @@ def read_sheet(path):
                 while len(values) < col:
                     values.append("")
                 values[col - 1] = as_cell(c, strings, dates, date1904)
-        return result
+        return {"sourceSheet": sheet_name, "rows": result}
 
 
 def main():
@@ -167,8 +171,8 @@ def main():
     parser.add_argument("workbook", type=Path, help="Local coach .xlsx file")
     args = parser.parse_args()
     try:
-        rows = read_sheet(args.workbook)
-        json.dump({"sourceSheet": "Block1", "rows": rows}, sys.stdout, ensure_ascii=False,
+        data = read_sheet(args.workbook)
+        json.dump(data, sys.stdout, ensure_ascii=False,
                   separators=(",", ":"))
         sys.stdout.write("\n")
     except (ValueError, OSError, ET.ParseError, zipfile.BadZipFile) as exc:
