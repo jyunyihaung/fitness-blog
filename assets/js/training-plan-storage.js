@@ -233,3 +233,106 @@ export async function updateTrainingPlanMetadata(spreadsheetId, token, planId, u
   });
   return result;
 }
+
+
+// Phase 2: edits are scoped by immutable plan/workout/item IDs, never a cached row
+// index. The full plan is validated before each write; unrelated plans are ignored.
+export async function updatePlannedWorkout(spreadsheetId, token, workoutId, updates) {
+  const allowed = ["title", "status", "planned_date", "notes"];
+  if (!updates || !Object.keys(updates).length ||
+      Object.keys(updates).some((key) => !allowed.includes(key))) {
+    throw new Error("只允許更新訓練日的名稱、狀態、日期和備註。");
+  }
+  const { baseUrl, sheetIds, rowsByTitle } = await planReadContext(spreadsheetId, token);
+  const existing = rowsByTitle.PlannedWorkouts.rows.find((w) => w.record.workout_id === workoutId);
+  if (!existing) throw new Error("找不到訓練日。");
+  const record = { ...existing.record, ...updates, updated_at: new Date().toISOString() };
+  if (!String(record.title).trim() || !["planned", "not_provided"].includes(record.status)) {
+    throw new Error("訓練日名稱或狀態不正確。");
+  }
+  if (record.planned_date && !/^\d{4}-\d{2}-\d{2}$/.test(record.planned_date)) {
+    throw new Error("日期格式不正確。");
+  }
+  if (record.status === "not_provided" &&
+      rowsByTitle.PlannedSets.rows.some((s) => s.record.workout_id === workoutId)) {
+    throw new Error("請先移除訓練日中的處方，再將狀態改成尚未提供。");
+  }
+  const request = buildTrainingPlanMetadataUpdateRequest(
+    sheetIds.get("PlannedWorkouts"), rowsByTitle.PlannedWorkouts.headers,
+    existing.rowIndex, record,
+  );
+  await sheetsRequest(baseUrl + ":batchUpdate", token, {
+    method: "POST", body: JSON.stringify({ requests: [request] }),
+  });
+  return record;
+}
+
+export async function savePlannedExercise(spreadsheetId, token, workoutId, input) {
+  if (!input || typeof input !== "object") throw new Error("缺少動作內容。");
+  const { baseUrl, sheetIds, rowsByTitle } = await planReadContext(spreadsheetId, token);
+  const workout = rowsByTitle.PlannedWorkouts.rows.find((w) => w.record.workout_id === workoutId)?.record;
+  if (!workout) throw new Error("找不到訓練日。");
+  if (workout.status !== "planned") throw new Error("請先將訓練日狀態設為已有訓練內容。");
+  const plan = rowsByTitle.TrainingPlans.rows.find((p) => p.record.plan_id === workout.plan_id)?.record;
+  if (!plan) throw new Error("找不到此訓練日所屬的計畫。");
+
+  const existing = input.planned_set_id
+    ? rowsByTitle.PlannedSets.rows.find((s) => s.record.planned_set_id === input.planned_set_id)
+    : null;
+  if (input.planned_set_id && (!existing || existing.record.workout_id !== workoutId)) {
+    throw new Error("找不到要編輯的處方。");
+  }
+  const now = new Date().toISOString();
+  const record = {
+    ...(existing?.record ?? {}),
+    ...Object.fromEntries(PLAN_HEADERS.PlannedSets.map((key) => [key, input[key] ?? existing?.record[key] ?? ""])),
+    planned_set_id: existing?.record.planned_set_id ?? crypto.randomUUID(),
+    workout_id: workoutId,
+    created_at: existing?.record.created_at ?? now,
+    updated_at: now,
+  };
+
+  const workouts = rowsByTitle.PlannedWorkouts.rows
+    .map((w) => w.record).filter((w) => w.plan_id === plan.plan_id);
+  const workoutIds = new Set(workouts.map((w) => w.workout_id));
+  const allItems = rowsByTitle.PlannedSets.rows
+    .map((s) => s.record).filter((s) => workoutIds.has(s.workout_id));
+  const candidate = {
+    plan, workouts,
+    sets: [
+      ...allItems.filter((s) => s.planned_set_id !== record.planned_set_id),
+      record,
+    ],
+  };
+  validateTrainingPlanRecords(candidate);
+
+  const sheetId = sheetIds.get("PlannedSets");
+  const headers = rowsByTitle.PlannedSets.headers;
+  const request = existing
+    ? buildTrainingPlanMetadataUpdateRequest(sheetId, headers, existing.rowIndex, record)
+    : { appendCells: { sheetId, rows: [appendRow(headers, record)], fields: "userEnteredValue" } };
+  await sheetsRequest(baseUrl + ":batchUpdate", token, {
+    method: "POST", body: JSON.stringify({ requests: [request] }),
+  });
+  return record;
+}
+
+export async function deletePlannedExercise(spreadsheetId, token, workoutId, plannedSetId) {
+  const { baseUrl, sheetIds, rowsByTitle } = await planReadContext(spreadsheetId, token);
+  if (!rowsByTitle.PlannedWorkouts.rows.some((w) => w.record.workout_id === workoutId)) {
+    throw new Error("找不到訓練日。");
+  }
+  const existing = rowsByTitle.PlannedSets.rows.find((s) =>
+    s.record.planned_set_id === plannedSetId && s.record.workout_id === workoutId);
+  if (!existing) throw new Error("找不到要刪除的動作。");
+  await sheetsRequest(baseUrl + ":batchUpdate", token, {
+    method: "POST", body: JSON.stringify({ requests: [{
+      deleteDimension: {
+        range: {
+          sheetId: sheetIds.get("PlannedSets"),
+          dimension: "ROWS", startIndex: existing.rowIndex, endIndex: existing.rowIndex + 1,
+        },
+      },
+    }] }),
+  });
+}
