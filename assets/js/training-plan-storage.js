@@ -104,15 +104,16 @@ export function buildTrainingPlanMetadataUpdateRequest(sheetId, headers, rowInde
 
 async function planReadContext(spreadsheetId, token) {
   const baseUrl = API_BASE + "/" + encodeURIComponent(spreadsheetId);
-  const [metadata, valuesByRange] = await Promise.all([
-    sheetsRequest(baseUrl + "?fields=" + encodeURIComponent("sheets.properties(sheetId,title)"), token),
-    readRanges(spreadsheetId, token, [...PLAN_TITLES, "Schema!A:B"]),
-  ]);
+  const metadata = await sheetsRequest(baseUrl + "?fields=" +
+    encodeURIComponent("sheets.properties(sheetId,title)"), token);
   const sheetIds = sheetIdsFromMetadata(metadata);
+  for (const title of PLAN_TITLES) {
+    if (!Number.isInteger(sheetIds.get(title))) throw new Error("尚未啟用訓練計畫：" + title + " 不存在。");
+  }
+  const valuesByRange = await readRanges(spreadsheetId, token, [...PLAN_TITLES, "Schema!A:B"]);
   const rowsByTitle = Object.fromEntries(PLAN_TITLES.map((title, i) =>
     [title, readSheetRows(valuesByRange[i] ?? [])]));
   for (const title of PLAN_TITLES) {
-    if (!Number.isInteger(sheetIds.get(title))) throw new Error("尚未啟用訓練計畫：" + title + " 不存在。");
     requirePlanHeaders(title, rowsByTitle[title]);
   }
   const schema = readSheetRows(valuesByRange[PLAN_TITLES.length] ?? []);
