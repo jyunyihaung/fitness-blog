@@ -35,6 +35,8 @@ navigation:
     url: /#/records
   - label: 訓練目標
     url: /#/goals
+  - label: 訓練課表
+    url: /#/training-plan
   - label: 設定
     url: /#/settings
 
