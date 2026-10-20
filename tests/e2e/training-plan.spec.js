@@ -87,7 +87,12 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("#/dashboard");
   await page.getByRole("button", { name: "重新連線已選擇的檔案" }).click();
-  await expect(page.locator("html")).toHaveAttribute("data-ready", "true");
+  await expect.poll(async () => {
+    const ready = await page.locator("html").getAttribute("data-ready");
+    return ready === "error"
+      ? "error: " + await page.locator("[data-setup-status]").innerText()
+      : ready;
+  }).toBe("true");
   await page.locator('[data-route-link="/training-plan"]').click();
   await expect(page.locator("[data-plan-connection-help]")).toBeVisible();
   await page.getByRole("link", { name: "前往設定" }).click();
