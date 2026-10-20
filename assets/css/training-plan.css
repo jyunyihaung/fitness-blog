@@ -1,0 +1,158 @@
+/* Phase 2 Training Plan views. Layout uses the existing design tokens. */
+.training-plan-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.training-plan-page [hidden] {
+  display: none !important;
+}
+
+.training-plan-page .form-grid {
+  min-width: 0;
+}
+
+.training-plan-page .field input,
+.training-plan-page .field select,
+.training-plan-page .field textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.training-plan-page .field {
+  min-width: 0;
+}
+
+.plan-import-form {
+  border-top: 1px solid var(--color-border, #d8d8d8);
+  margin-top: var(--space-4, 1rem);
+  padding-top: var(--space-4, 1rem);
+}
+
+.plan-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, .5rem);
+  margin: var(--space-3, .75rem) 0;
+}
+
+.plan-tabs button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.plan-exercise-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2, .5rem);
+  margin: var(--space-4, 1rem) 0 var(--space-2, .5rem);
+}
+
+.plan-exercise-header h3 {
+  margin: 0;
+}
+
+.plan-prescription-list {
+  display: grid;
+  gap: var(--space-2, .5rem);
+  margin: 0;
+  padding: 0;
+  list-style-position: inside;
+}
+
+.plan-prescription {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--space-3, .75rem);
+  padding: var(--space-3, .75rem);
+  border: 1px solid var(--color-border, #d8d8d8);
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.plan-prescription > div:first-child {
+  min-width: 0;
+  flex: 1 1 14rem;
+  overflow-wrap: anywhere;
+}
+
+.plan-prescription strong {
+  display: block;
+  margin-bottom: .25rem;
+}
+
+.plan-item-detail,
+.plan-item-notes,
+.plan-day-notes,
+.plan-item-warning {
+  margin: .2rem 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.plan-item-detail,
+.plan-item-notes,
+.plan-day-notes {
+  color: var(--color-muted, #6b7280);
+  font-size: .95rem;
+}
+
+.plan-item-warning {
+  color: #b36b18;
+  font-weight: 600;
+}
+
+.plan-item-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2, .5rem);
+}
+
+.plan-item-form {
+  margin-top: var(--space-4, 1rem);
+  padding: var(--space-4, 1rem);
+  border: 1px solid var(--color-border, #d8d8d8);
+  border-radius: 12px;
+}
+
+.plan-item-form .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: var(--space-3, .75rem);
+}
+
+.plan-exercise-list {
+  min-width: 0;
+}
+
+@media (max-width: 44rem) {
+  .training-plan-page .form-actions,
+  .plan-item-actions {
+    align-items: stretch;
+  }
+
+  .plan-tabs button {
+    flex: 1 1 5rem;
+  }
+
+  .plan-prescription {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .plan-item-actions button {
+    flex: 1 1 6rem;
+  }
+
+  .plan-item-form {
+    padding: var(--space-3, .75rem);
+  }
+}
