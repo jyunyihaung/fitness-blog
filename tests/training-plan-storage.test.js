@@ -5,6 +5,7 @@ import {
   buildPlanHeaderRepairData, buildTrainingPlanCreateRequests,
   createTrainingPlan, enableTrainingPlanStorage, getTrainingPlanRecords,
   listTrainingPlanRecords, updateTrainingPlanMetadata,
+  updatePlannedWorkout, savePlannedExercise, deletePlannedExercise,
 } from "../assets/js/training-plan-storage.js";
 
 const ID = "training-plan-test";
@@ -72,6 +73,11 @@ function workbook() {
           const sheet = [...sheets.values()].find((s) => s.id === request.updateCells.range.sheetId);
           sheet.rows[request.updateCells.range.startRowIndex] =
             request.updateCells.rows[0].values.map((v) => v.userEnteredValue.stringValue);
+        }
+        if (request.deleteDimension) {
+          const range = request.deleteDimension.range;
+          const sheet = [...sheets.values()].find((s) => s.id === range.sheetId);
+          sheet.rows.splice(range.startIndex, range.endIndex - range.startIndex);
         }
       }
       return json({});
@@ -174,5 +180,90 @@ describe("Training Plan Sheets storage (Phase 1)", () => {
     await expect(enableTrainingPlanStorage(ID, TOKEN)).rejects.toThrow("版本衝突");
     expect(state.sheets.size).toBe(6);
     expect(state.calls.every((call) => call.method === "GET")).toBe(true);
+  });
+});
+
+
+describe("Training Plan editor persistence (Phase 2)", () => {
+  it("gives actionable missing-tab errors without requesting absent ranges", async () => {
+    const state = workbook();
+    vi.stubGlobal("fetch", state.fetchMock);
+    await expect(listTrainingPlanRecords(ID, TOKEN)).rejects.toThrow("尚未啟用訓練計畫");
+    expect(state.calls.filter((call) => call.path.endsWith("/values:batchGet"))).toHaveLength(0);
+  });
+
+  it("changes a day's date/status without modifying completed history", async () => {
+    const state = workbook();
+    vi.stubGlobal("fetch", state.fetchMock);
+    await enableTrainingPlanStorage(ID, TOKEN);
+    const records = sampleRecords();
+    await createTrainingPlan(ID, TOKEN, records);
+    const beforeSessions = JSON.stringify(state.sheets.get("Sessions").rows);
+    const workoutId = records.workouts[0].workout_id;
+    await expect(updatePlannedWorkout(ID, TOKEN, workoutId, { status: "not_provided" }))
+      .rejects.toThrow("移除");
+    const updated = await updatePlannedWorkout(ID, TOKEN, workoutId, {
+      title: "Squat Day", planned_date: "2026-10-22", notes: "Technique work",
+    });
+    expect(updated).toMatchObject({
+      title: "Squat Day", planned_date: "2026-10-22", status: "planned",
+    });
+    expect((await getTrainingPlanRecords(ID, TOKEN, records.plan.plan_id)).workouts[0].title).toBe("Squat Day");
+    expect(JSON.stringify(state.sheets.get("Sessions").rows)).toBe(beforeSessions);
+  });
+
+  it("creates, edits, rejects collision and deletes planned exercises safely", async () => {
+    const state = workbook();
+    vi.stubGlobal("fetch", state.fetchMock);
+    await enableTrainingPlanStorage(ID, TOKEN);
+    const records = sampleRecords();
+    await createTrainingPlan(ID, TOKEN, records);
+    const workoutId = records.workouts[0].workout_id;
+    const newItem = {
+      exercise_name: "Walk", exercise_order: "2", item_kind: "activity",
+      target_sets: "", reps_kind: "unspecified", load_kind: "unspecified",
+      target_metric: "steps", target_minimum: "8500", coach_notes: "Active recovery",
+    };
+    const created = await savePlannedExercise(ID, TOKEN, workoutId, newItem);
+    expect(created).toMatchObject({ exercise_name: "Walk", target_minimum: "8500" });
+    const read = await getTrainingPlanRecords(ID, TOKEN, records.plan.plan_id);
+    expect(read.sets).toHaveLength(2);
+    await expect(savePlannedExercise(ID, TOKEN, workoutId, {
+      ...newItem, planned_set_id: created.planned_set_id, exercise_order: "1",
+    })).rejects.toThrow("順序重複");
+    const edited = await savePlannedExercise(ID, TOKEN, workoutId, {
+      ...newItem, planned_set_id: created.planned_set_id, coach_notes: "Updated",
+    });
+    expect(edited.planned_set_id).toBe(created.planned_set_id);
+    expect(edited.created_at).toBe(created.created_at);
+    await deletePlannedExercise(ID, TOKEN, workoutId, created.planned_set_id);
+    expect((await getTrainingPlanRecords(ID, TOKEN, records.plan.plan_id)).sets)
+      .toHaveLength(1);
+    expect(state.sheets.get("Sets").rows).toHaveLength(1);
+    expect(state.sheets.get("Sessions").rows).toHaveLength(1);
+  });
+
+  it("prevents adding items to absent workouts or unrelated plan IDs", async () => {
+    const state = workbook();
+    vi.stubGlobal("fetch", state.fetchMock);
+    await enableTrainingPlanStorage(ID, TOKEN);
+    const normalized = {
+      format: "fitness-blog-coach-plan", version: 1, source: { sheet: "Manual" },
+      blocks: [{ name: "Custom", weeks: [{ week: 1, notes: [], workouts: [{ day: 1, items: [] }] }] }],
+    };
+    let index = 0;
+    const plan = createTrainingPlanRecords(normalized, { idFactory: () => "blank-" + ++index });
+    await createTrainingPlan(ID, TOKEN, plan);
+    const workoutId = plan.workouts[0].workout_id;
+    await expect(savePlannedExercise(ID, TOKEN, workoutId, {
+      exercise_name: "Squat", exercise_order: "1", item_kind: "exercise",
+      reps_kind: "fixed", reps_value: "5", load_kind: "bodyweight",
+    })).rejects.toThrow("請先");
+    await updatePlannedWorkout(ID, TOKEN, workoutId, { status: "planned" });
+    await savePlannedExercise(ID, TOKEN, workoutId, {
+      exercise_name: "Squat", exercise_order: "1", item_kind: "exercise",
+      reps_kind: "fixed", reps_value: "5", load_kind: "bodyweight",
+    });
+    expect((await getTrainingPlanRecords(ID, TOKEN, plan.plan.plan_id)).sets).toHaveLength(1);
   });
 });
