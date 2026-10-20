@@ -4,11 +4,13 @@ import { googleAuth } from "./auth-service.js";
 import { readRanges, repairSpreadsheet, saveExerciseRecord, setExerciseActive, upsertSettings, validateSpreadsheet } from "./google-sheets.js";
 import { createSettingRecords, parseSettings, validateSettings } from "./settings.js";
 import { createExerciseRecord, parseExercises, sortExerciseSuggestions, validateExerciseInput } from "./exercises.js";
+import { enableTrainingPlanStorage } from "./training-plan-storage.js";
 
 const form = document.querySelector("[data-settings-form]");
 const connection = document.querySelector("[data-settings-connection]");
 const loadButton = document.querySelector("[data-load-settings]");
 const repairButton = document.querySelector("[data-repair-schema]");
+const enablePlansButton = document.querySelector("[data-enable-plans]");
 const disconnectButton = document.querySelector("[data-disconnect-sheet]");
 const schemaStatus = document.querySelector("[data-schema-status]");
 const settingsStatus = document.querySelector("[data-settings-status]");
@@ -149,6 +151,7 @@ async function initialize() {
     connection.textContent = spreadsheet?.id ? `目前連線：${spreadsheet.name}` : "尚未選擇 Google Sheet。";
     loadButton.disabled = !spreadsheet?.id || !clientId;
     repairButton.disabled = !spreadsheet?.id || !clientId;
+    enablePlansButton.disabled = !spreadsheet?.id || !clientId;
     disconnectButton.disabled = !spreadsheet?.id;
     if (!spreadsheet?.id) {
       form.hidden = true;
@@ -210,6 +213,26 @@ async function initialize() {
       await loadSettings(spreadsheet, token);
     } catch (error) {
       schemaStatus.textContent = safeErrorMessage(error, "無法修復資料結構。");
+      schemaStatus.dataset.state = "error";
+    } finally {
+      setBusy(false);
+      renderConnection();
+    }
+  });
+
+  enablePlansButton.addEventListener("click", async () => {
+    if (!spreadsheet?.id || !window.confirm("將在目前連線的 Google Sheet 加入三個訓練計畫工作表和版本標記。這是新增資料結構，不會刪除既有 Sessions / Sets。確定啟用？")) return;
+    setBusy(true);
+    schemaStatus.textContent = "正在建立訓練計畫資料表…";
+    try {
+      const token = googleAuth.getValidAccessToken() ?? await googleAuth.getAccessToken();
+      const result = await enableTrainingPlanStorage(spreadsheet.id, token);
+      schemaStatus.textContent = result.createdSheets.length
+        ? `訓練計畫資料表已啟用（新增 ${result.createdSheets.length} 張表）。`
+        : "訓練計畫資料表已通過檢查。";
+      schemaStatus.dataset.state = "success";
+    } catch (error) {
+      schemaStatus.textContent = safeErrorMessage(error, "無法啟用訓練計畫資料表。");
       schemaStatus.dataset.state = "error";
     } finally {
       setBusy(false);
