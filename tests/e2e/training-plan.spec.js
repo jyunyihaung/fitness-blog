@@ -24,7 +24,7 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
     contentType: "application/javascript",
     body: 'window.google = {accounts: {oauth2: {initTokenClient: function(options) {return {requestAccessToken: function() {options.callback({access_token: "e2e-token", expires_in: 3600});}};}}}};',
   }));
-  await page.route("https://sheets.googleapis.com/v4/spreadsheets**", async (route) => {
+  await page.route("https://sheets.googleapis.com/v4/spreadsheets/**", async (route) => {
     const req = route.request();
     const url = new URL(req.url());
     const path = url.pathname;
