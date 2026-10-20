@@ -7,7 +7,6 @@ import {
   listTrainingPlanRecords, updateTrainingPlanMetadata,
 } from "../assets/js/training-plan-storage.js";
 
-const BASE = "https://sheets.googleapis.com/v4/spreadsheets";
 const ID = "training-plan-test";
 const TOKEN = "unit-test-token";
 
