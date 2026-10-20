@@ -114,3 +114,25 @@ Validation checks required sheet names, `app_id`, supported schema version, and
 required headers. Repair may create missing sheets or append missing headers but
 must not rename, reorder, or discard user columns. Any destructive migration
 requires a future versioned plan and explicit confirmation.
+
+
+## Training Plan extension (Phase 1, extension version 1)
+
+The original six sheets and base `schema_version=1` remain required for
+compatibility. New workbooks additionally contain three separate, **optional**
+training-plan tables:
+
+- `TrainingPlans` — plan identity, block, week/day counts, draft/active/archived status
+- `PlannedWorkouts` — plan ID, week/day position, optional date, planned/not_provided status
+- `PlannedSets` — one ordered exercise/activity prescription per row, including
+  intended number of sets, explicit repetitions/load/RPE type, steps and coach notes
+
+Existing workbooks are upgraded only after explicit consent from Settings.
+The extension uses a separate Schema key `training_plan_schema_version=1`;
+existing `schema_version` is not incremented by this additive feature.
+
+Prescribed workloads are **not** completed workouts. Do not insert coach targets
+into `Sessions` or `Sets` until the user actually performs and saves a
+session. All fields are individually mapped by header name (no JSON blobs).
+See [Phase 1 schema contract](docs/COACH_PLAN_PHASE1.md) for complete headers,
+relations, validation and write APIs.
