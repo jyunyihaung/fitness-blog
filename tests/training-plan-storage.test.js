@@ -50,7 +50,10 @@ function workbook() {
       for (const data of body.data) {
         const sheet = sheets.get(data.range.split("!")[0]);
         if (!sheet) throw new Error("unknown tab");
-        if (data.range.endsWith("1")) sheet.rows[0].push(...data.values[0]);
+        if (data.range.endsWith("1")) {
+          sheet.rows[0] ??= [];
+          sheet.rows[0].push(...data.values[0]);
+        }
         else throw new Error("unknown value range");
       }
       return json({});
