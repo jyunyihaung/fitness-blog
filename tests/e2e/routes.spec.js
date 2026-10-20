@@ -6,6 +6,7 @@ const routes = [
   ["quick add", "#/quick-add", "快速新增紀錄"],
   ["records", "#/records", "訓練紀錄"],
   ["goals", "#/goals", "訓練目標"],
+  ["training plan", "#/training-plan", "訓練課表"],
   ["settings", "#/settings", "設定"],
 ];
 
