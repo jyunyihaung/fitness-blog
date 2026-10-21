@@ -177,7 +177,7 @@ async function operation(handler) {
     await handler();
   } catch (error) {
     const message = String(error?.message ?? "");
-    help.hidden = !message.includes("尚未啟用") && !message.includes("尚未完成");
+    help.hidden = !message.includes("尚未啟用") && !message.includes("尚未完成") && !message.includes("缺少欄位");
     showError(error);
   } finally {
     setBusy(false);
