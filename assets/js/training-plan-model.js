@@ -15,6 +15,7 @@ export const PLAN_HEADERS = Object.freeze({
     "load_kind", "load_value", "load_unit", "load_operator", "load_rpe", "load_raw",
     "target_metric", "target_minimum", "coach_notes", "source_row",
     "created_at", "updated_at",
+    "exercise_group_id", "set_order", "set_type", "is_warmup", "set_notes", "exercise_category",
   ],
 });
 export const PLAN_TITLES = Object.freeze(Object.keys(PLAN_HEADERS));
