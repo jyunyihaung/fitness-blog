@@ -22,7 +22,7 @@ export function plannedRowsToExercises(rows = []) {
     for (let i = 0; i < count; i += 1) {
       exercise.sets.push({
         plannedSetId: row.exercise_group_id ? row.planned_set_id : i === 0 ? row.planned_set_id : "",
-        weightKg: row.load_kind === "fixed" && row.load_unit === "kg" ? str(row.load_value) : "0",
+        weightKg: row.load_kind === "fixed" ? str(row.load_value) : "0",
         reps: row.reps_kind === "fixed" ? str(row.reps_value) : "1",
         rpe: "",
         type: row.set_type || (row.item_kind === "warmup" ? "warmup" : "working"),
@@ -89,8 +89,6 @@ export function exercisesToPlannedRows(workoutId, exercises, {
         coach_notes: str(set.notes), source_row: str(set.sourceRow),
         created_at: now, updated_at: now,
       };
-      // Shared editor weight field is kg. Non-kg prescriptions use separate fields.
-      if (loadKind === "fixed" && row.load_unit !== "kg") throw new Error("固定重量請使用 kg。");
       if (!["working", "warmup", "backoff", "top", "amrap"].includes(row.set_type)) throw new Error("組別類型無效。");
       items.push(row);
     }
