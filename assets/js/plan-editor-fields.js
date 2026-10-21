@@ -35,7 +35,7 @@ const fields = [
   ["待確認次數", "planRepsRaw", input("planRepsRaw"), "reps:needs_review"],
   ["重量類型", "planLoadKind", select("planLoadKind", LOAD), ""],
   ["限制重量", "planLoadValue", input("planLoadValue","number"), "load:bounded"],
-  ["單位", "planLoadUnit", select("planLoadUnit", [["kg","kg"],["lbs","lbs"]]), "load:bounded"],
+  ["單位", "planLoadUnit", select("planLoadUnit", [["kg","kg"],["lbs","lbs"]]), "load:fixed,bounded"],
   ["運算子", "planLoadOperator", select("planLoadOperator", [["<","<"],["<=","<="],[">",">"],[">=",">="]]), "load:bounded"],
   ["重量目標 RPE", "planLoadRpe", input("planLoadRpe","number"), "load:rpe_target"],
   ["待確認重量", "planLoadRaw", input("planLoadRaw"), "load:needs_review"],
@@ -64,6 +64,7 @@ export function attachPlanSet(set, exercise, values = {}) {
   set.querySelector(".set-fields").after(panel);
   set.dataset.plannedSetId = values.plannedSetId || "";
   set.dataset.sourceRow = values.sourceRow || "";
+  set.querySelector("[data-set-weight]").closest("label").querySelector("span").textContent = "重量（依單位）";
   set.querySelector("[data-inline-rest]").hidden = true;
   togglePlanSet(set, exercise);
 }
@@ -78,7 +79,7 @@ export function togglePlanSet(set, exercise) {
     const condition = wrap.dataset.planCondition;
     wrap.hidden = condition === "activity" ? !activity
       : condition.startsWith("reps:") ? reps !== condition.slice(5)
-      : condition.startsWith("load:") ? load !== condition.slice(5)
+      : condition.startsWith("load:") ? !condition.slice(5).split(",").includes(load)
       : false;
   });
 }
