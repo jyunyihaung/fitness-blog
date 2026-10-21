@@ -90,12 +90,6 @@
       <div class="form-grid">
         <label class="field"><span>訓練日名稱</span><input type="text" name="title" maxlength="120" required></label>
         <label class="field"><span>預計日期（可留空）</span><input type="date" name="planned_date"></label>
-        <label class="field"><span>安排狀態</span>
-          <select name="status">
-            <option value="planned">已有訓練內容</option>
-            <option value="not_provided">尚未提供</option>
-          </select>
-        </label>
       </div>
       <label class="field"><span>訓練日備註</span><textarea name="notes" rows="2" maxlength="3000"></textarea></label>
       <div class="form-actions"><button type="submit" class="button">儲存訓練日</button></div>
@@ -105,53 +99,11 @@
       <h3>動作與處方</h3>
       <button class="button" type="button" data-plan-new-item>＋ 新增動作</button>
     </div>
-    <div class="plan-exercise-list" data-plan-item-list></div>
-
-    <form class="plan-item-form" data-plan-item-form hidden novalidate>
-      <h3 data-plan-item-form-title>編輯處方</h3>
-      <input type="hidden" name="planned_set_id">
-      <div class="form-grid">
-        <label class="field"><span>動作名稱</span><input name="exercise_name" type="text" maxlength="120" required></label>
-        <label class="field"><span>動作類型</span><select name="item_kind">
-          <option value="exercise">訓練動作</option>
-          <option value="warmup">暖身</option>
-          <option value="cooldown">收操</option>
-          <option value="activity">活動目標</option>
-        </select></label>
-        <label class="field"><span>排序</span><input name="exercise_order" type="number" min="1" max="500" required></label>
-        <label class="field"><span>目標組數（可留空）</span><input name="target_sets" type="number" min="1" max="100"></label>
-        <label class="field"><span>次數類型</span><select name="reps_kind">
-          <option value="unspecified">未指定</option>
-          <option value="fixed">固定次數</option>
-          <option value="range">次數範圍</option>
-          <option value="until_rpe">做到目標 RPE</option>
-          <option value="needs_review">待確認</option>
-        </select></label>
-        <label class="field" data-reps-field="fixed"><span>固定次數</span><input name="reps_value" type="number" min="1"></label>
-        <label class="field" data-reps-field="range"><span>最少次數</span><input name="reps_min" type="number" min="1"></label>
-        <label class="field" data-reps-field="range"><span>最多次數</span><input name="reps_max" type="number" min="1"></label>
-        <label class="field" data-reps-field="until_rpe"><span>次數目標 RPE</span><input name="reps_rpe" type="number" min="1" max="10" step="0.5"></label>
-        <label class="field" data-reps-field="needs_review"><span>原始次數</span><input name="reps_raw" type="text" maxlength="150"></label>
-        <label class="field"><span>重量類型</span><select name="load_kind">
-          <option value="unspecified">未指定</option>
-          <option value="fixed">固定重量</option>
-          <option value="bodyweight">自體重量 BW</option>
-          <option value="rpe_target">目標 RPE</option>
-          <option value="bounded">重量上下限</option>
-          <option value="needs_review">待確認</option>
-        </select></label>
-        <label class="field" data-load-field="fixed bounded"><span>重量</span><input name="load_value" type="number" min="0" step="0.5"></label>
-        <label class="field" data-load-field="fixed bounded"><span>重量單位</span><select name="load_unit"><option value="kg">kg</option><option value="lbs">lbs</option></select></label>
-        <label class="field" data-load-field="bounded"><span>重量界限</span><select name="load_operator"><option value="&lt;">&lt;</option><option value="&lt;=">&le;</option><option value="&gt;">&gt;</option><option value="&gt;=">&ge;</option></select></label>
-        <label class="field" data-load-field="rpe_target"><span>重量目標 RPE</span><input name="load_rpe" type="number" min="1" max="10" step="0.5"></label>
-        <label class="field" data-load-field="needs_review"><span>原始重量</span><input name="load_raw" type="text" maxlength="150"></label>
-        <label class="field" data-steps-field><span>步數目標</span><input name="target_minimum" type="number" min="1"></label>
-      </div>
-      <label class="field"><span>教練備註</span><textarea name="coach_notes" maxlength="3000" rows="2"></textarea></label>
-      <div class="form-actions">
-        <button class="button primary" type="submit">儲存動作</button>
-        <button class="button" type="button" data-plan-cancel-item>取消</button>
-      </div>
-    </form>
+    <p class="section-lede">與「新增紀錄」、「快速新增」共用多動作、多組編輯器。可以連續新增動作或組數，再一次儲存整天課表。重量、次數與 RPE 都是計畫目標，並非實際完成紀錄。</p>
+    <div class="plan-multi-editor" data-plan-exercises></div>
+    <div class="form-actions">
+      <button class="button primary" type="button" data-plan-save-exercises>儲存本日所有動作</button>
+    </div>
+    <p class="section-lede">沒有動作的訓練日會自動標示為「尚未提供」；新增後自動視為「已有訓練內容」。如有修改，請先儲存再切換 Week／Day。</p>
   </section>
 </section>
