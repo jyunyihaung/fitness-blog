@@ -126,7 +126,7 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   await page.locator('[data-plan-exercises] [data-set-reps]').nth(2).fill("8");
   await page.locator("[data-plan-save-exercises]").click();
   await expect(page.locator("[data-plan-status]")).toContainText("已儲存 2 個動作、3 組處方");
-  await expect(page.locator("[data-plan-exercises]")).toContainText("Romanian Deadlift");
+  await expect(page.locator('[data-plan-exercises] [data-exercise-name]').nth(1)).toHaveValue("Romanian Deadlift");
   await page.getByRole("button", { name: /Week 2/ }).click();
   await expect(page.locator("[data-plan-day-summary]")).toContainText("尚未提供");
   await page.getByRole("button", { name: /Week 1/ }).click();
