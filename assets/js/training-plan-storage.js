@@ -2,6 +2,7 @@
 // No completed Sessions/Sets are created from prescriptions.
 import { readRanges, validateSpreadsheet } from "./google-sheets.js";
 import { PLAN_HEADERS, PLAN_TITLES, PLAN_SCHEMA_VERSION, validateTrainingPlanRecords } from "./training-plan-model.js";
+import { exercisesToPlannedRows, validatePlannedDayReplacement } from "./training-plan-editor.js";
 
 const API_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
 const VERSION_KEY = "training_plan_schema_version";
@@ -336,4 +337,47 @@ export async function deletePlannedExercise(spreadsheetId, token, workoutId, pla
       },
     }] }),
   });
+}
+
+
+// Replace an entire day in one atomic Google Sheets batch. Exercise rows are
+// ordered and grouped so warm-up/top/backoff sets can differ in weight/reps/RPE.
+// Blank -> planned when an exercise is added, planned -> blank when all removed.
+export async function replacePlannedDayExercises(spreadsheetId, token, workoutId, exercises) {
+  const { baseUrl, sheetIds, rowsByTitle } = await planReadContext(spreadsheetId, token);
+  const existingWorkout = rowsByTitle.PlannedWorkouts.rows.find((row) => row.record.workout_id === workoutId);
+  if (!existingWorkout) throw new Error("找不到指定的訓練日。");
+  const planId = existingWorkout.record.plan_id;
+  const plan = rowsByTitle.TrainingPlans.rows.find((row) => row.record.plan_id === planId)?.record;
+  if (!plan) throw new Error("找不到指定的訓練計畫。");
+  const workouts = rowsByTitle.PlannedWorkouts.rows.filter((row) =>
+    row.record.plan_id === planId).map((row) => row.record);
+  const workoutIds = new Set(workouts.map((row) => row.workout_id));
+  const previous = rowsByTitle.PlannedSets.rows.filter((row) =>
+    workoutIds.has(row.record.workout_id)).map((row) => row.record);
+  const next = exercisesToPlannedRows(workoutId, exercises);
+  validatePlannedDayReplacement(plan, workouts, previous, workoutId, next);
+
+  // Fail closed instead of discarding columns added by other tools.
+  for (const title of ["PlannedSets", "PlannedWorkouts"]) {
+    const unknown = rowsByTitle[title].headers.filter((header) => !PLAN_HEADERS[title].includes(header));
+    if (unknown.length) {
+      throw new Error(title + " 含有未支援的自訂欄位，為避免覆蓋資料請先備份並確認。");
+    }
+  }
+  const planSetId = sheetIds.get("PlannedSets");
+  const headers = rowsByTitle.PlannedSets.headers;
+  const oldRows = rowsByTitle.PlannedSets.rows.filter((row) => row.record.workout_id === workoutId);
+  const requests = oldRows.sort((a,b) => b.rowIndex-a.rowIndex).map(({ rowIndex }) => ({
+    deleteDimension: { range: { sheetId: planSetId, dimension: "ROWS", startIndex: rowIndex, endIndex: rowIndex + 1 } },
+  }));
+  if (next.length) requests.push({
+    appendCells: { sheetId: planSetId, rows: next.map((item) => appendRow(headers, item)), fields: "userEnteredValue" },
+  });
+  requests.push(buildTrainingPlanMetadataUpdateRequest(
+    sheetIds.get("PlannedWorkouts"), rowsByTitle.PlannedWorkouts.headers, existingWorkout.rowIndex,
+    { ...existingWorkout.record, status: next.length ? "planned" : "not_provided", updated_at: new Date().toISOString() },
+  ));
+  await sheetsRequest(baseUrl + ":batchUpdate", token, { method: "POST", body: JSON.stringify({ requests }) });
+  return { workoutId, exerciseCount: exercises.length, setCount: next.length };
 }
