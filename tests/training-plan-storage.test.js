@@ -5,7 +5,7 @@ import {
   buildPlanHeaderRepairData, buildTrainingPlanCreateRequests,
   createTrainingPlan, enableTrainingPlanStorage, getTrainingPlanRecords,
   listTrainingPlanRecords, updateTrainingPlanMetadata,
-  updatePlannedWorkout, savePlannedExercise, deletePlannedExercise,
+  updatePlannedWorkout, savePlannedExercise, deletePlannedExercise, replacePlannedDayExercises,
 } from "../assets/js/training-plan-storage.js";
 
 const ID = "training-plan-test";
@@ -265,5 +265,80 @@ describe("Training Plan editor persistence (Phase 2)", () => {
       reps_kind: "fixed", reps_value: "5", load_kind: "bodyweight",
     });
     expect((await getTrainingPlanRecords(ID, TOKEN, plan.plan.plan_id)).sets).toHaveLength(1);
+  });
+});
+
+
+describe("Automatic day status and multi-set atomic persistence", () => {
+  it("saves multiple exercise groups and per-set targets in one batch", async () => {
+    const state = workbook();
+    vi.stubGlobal("fetch", state.fetchMock);
+    await enableTrainingPlanStorage(ID, TOKEN);
+    const original = sampleRecords();
+    await createTrainingPlan(ID, TOKEN, original);
+    const workoutId = original.workouts[0].workout_id;
+    const beforeSessions = JSON.stringify(state.sheets.get("Sessions").rows);
+    const beforeSets = JSON.stringify(state.sheets.get("Sets").rows);
+    const result = await replacePlannedDayExercises(ID, TOKEN, workoutId, [
+      { name: "Squat", category: "squat", planKind: "exercise", sets: [
+        { repsKind: "fixed", reps: "5", loadKind: "fixed", weightKg: "50", loadUnit: "kg", type: "warmup", isWarmup: true },
+        { repsKind: "fixed", reps: "3", loadKind: "fixed", weightKg: "80", loadUnit: "kg", type: "top" },
+      ] },
+      { name: "Pull Ups", category: "accessory", planKind: "exercise", sets: [
+        { repsKind: "until_rpe", repsRpe: "7", loadKind: "bodyweight", type: "working" },
+      ] },
+    ]);
+    expect(result).toMatchObject({ exerciseCount: 2, setCount: 3 });
+    const loaded = await getTrainingPlanRecords(ID, TOKEN, original.plan.plan_id);
+    expect(loaded.sets).toHaveLength(3);
+    expect(loaded.sets.map((x) => x.load_kind)).toEqual(["fixed", "fixed", "bodyweight"]);
+    expect(loaded.sets.map((x) => x.set_type)).toEqual(["warmup", "top", "working"]);
+    expect(loaded.sets.map((x) => x.exercise_order)).toEqual(["1", "2", "3"]);
+    expect(loaded.sets[0].exercise_group_id).toBe(loaded.sets[1].exercise_group_id);
+    expect(loaded.workouts[0].status).toBe("planned");
+    expect(JSON.stringify(state.sheets.get("Sessions").rows)).toBe(beforeSessions);
+    expect(JSON.stringify(state.sheets.get("Sets").rows)).toBe(beforeSets);
+    const writes = state.calls.filter((c) => c.method === "POST" && c.path.endsWith(":batchUpdate"));
+    const last = writes.at(-1).body.requests;
+    expect(last.filter((x) => x.deleteDimension)).toHaveLength(1);
+    expect(last.filter((x) => x.appendCells)).toHaveLength(1);
+    expect(last.filter((x) => x.updateCells)).toHaveLength(1);
+  });
+
+  it("automatically marks blank days as planned on first exercise and not_provided when cleared", async () => {
+    const state = workbook();
+    vi.stubGlobal("fetch", state.fetchMock);
+    await enableTrainingPlanStorage(ID, TOKEN);
+    let index = 0;
+    const empty = createTrainingPlanRecords({
+      format: "fitness-blog-coach-plan", version: 1, source: { sheet: "Manual" },
+      blocks: [{ name: "Custom", weeks: [{ week: 1, notes: [], workouts: [{ day: 1, items: [] }] }] }],
+    }, { idFactory: () => "empty-" + ++index });
+    await createTrainingPlan(ID, TOKEN, empty);
+    const workoutId = empty.workouts[0].workout_id;
+    await replacePlannedDayExercises(ID, TOKEN, workoutId, [{
+      name: "Squat", category: "squat", planKind: "exercise",
+      sets: [{ repsKind: "fixed", reps: "3", loadKind: "fixed", weightKg: "70", loadUnit: "kg", type: "working" }],
+    }]);
+    expect((await getTrainingPlanRecords(ID, TOKEN, empty.plan.plan_id)).workouts[0].status).toBe("planned");
+    await replacePlannedDayExercises(ID, TOKEN, workoutId, []);
+    const loaded = await getTrainingPlanRecords(ID, TOKEN, empty.plan.plan_id);
+    expect(loaded.workouts[0].status).toBe("not_provided");
+    expect(loaded.sets).toEqual([]);
+  });
+
+  it("rejects an invalid editor submission without deleting any original prescription", async () => {
+    const state = workbook();
+    vi.stubGlobal("fetch", state.fetchMock);
+    await enableTrainingPlanStorage(ID, TOKEN);
+    const original = sampleRecords();
+    await createTrainingPlan(ID, TOKEN, original);
+    const target = original.workouts[0].workout_id;
+    const before = JSON.stringify(state.sheets.get("PlannedSets").rows);
+    await expect(replacePlannedDayExercises(ID, TOKEN, target, [{
+      name: "Squat", category: "squat", planKind: "exercise",
+      sets: [{ repsKind: "fixed", reps: "", loadKind: "fixed", weightKg: "50", loadUnit: "kg", type: "working" }],
+    }])).rejects.toThrow("目標次數");
+    expect(JSON.stringify(state.sheets.get("PlannedSets").rows)).toBe(before);
   });
 });
