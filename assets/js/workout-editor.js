@@ -1,4 +1,5 @@
 import { normalizeExerciseName, sortExerciseSuggestions } from "./exercises.js";
+import { attachPlanExercise, attachPlanSet, readPlanSet, togglePlanSet } from "./plan-editor-fields.js";
 
 const exerciseTemplate = document.querySelector("[data-exercise-template]");
 const setTemplate = document.querySelector("[data-set-template]");
@@ -26,7 +27,7 @@ function readSet(set) {
   };
 }
 
-export function createWorkoutEditor(root, { completionEnabled = false } = {}) {
+export function createWorkoutEditor(root, { completionEnabled = false, planMode = false } = {}) {
   let exerciseOptions = [];
 
   function setExerciseOptions(exercises = []) {
@@ -53,7 +54,9 @@ export function createWorkoutEditor(root, { completionEnabled = false } = {}) {
     const previous = exercise.querySelector("[data-set]:last-child");
     const fragment = setTemplate.content.cloneNode(true);
     const set = fragment.querySelector("[data-set]");
-    setValues(set, values ?? (previous ? readSet(previous) : {}), completionEnabled);
+    const initial = values ?? (previous ? (planMode ? readPlanSet(previous, readSet(previous)) : readSet(previous)) : {});
+    setValues(set, initial, completionEnabled);
+    if (planMode) attachPlanSet(set, exercise, initial);
     exercise.querySelector("[data-sets]").append(fragment);
     renumber();
   }
@@ -63,6 +66,7 @@ export function createWorkoutEditor(root, { completionEnabled = false } = {}) {
     const exercise = fragment.querySelector("[data-exercise]");
     exercise.querySelector("[data-exercise-name]").value = values?.name ?? "";
     exercise.querySelector("[data-exercise-category]").value = values?.category ?? "accessory";
+    if (planMode) attachPlanExercise(exercise, values);
     const sets = values?.sets?.length ? values.sets : [null];
     sets.forEach((set) => addSet(exercise, set));
     root.append(fragment);
@@ -73,18 +77,25 @@ export function createWorkoutEditor(root, { completionEnabled = false } = {}) {
   function load(exercises = []) {
     root.replaceChildren();
     if (exercises.length) exercises.forEach(addExercise);
-    else addExercise();
+    else if (!planMode) addExercise();
   }
 
   function read({ completedOnly = false } = {}) {
     return Array.from(root.querySelectorAll("[data-exercise]")).map((exercise) => ({
+      ...(planMode ? { groupId: exercise.dataset.exerciseGroupId || "", planKind: exercise.querySelector("[data-plan-kind]").value } : {}),
       name: exercise.querySelector("[data-exercise-name]").value,
       category: exercise.querySelector("[data-exercise-category]").value,
       sets: Array.from(exercise.querySelectorAll("[data-set]"))
-        .map(readSet)
+        .map((set) => planMode ? readPlanSet(set, readSet(set)) : readSet(set))
         .filter((set) => !completedOnly || set.completed),
     })).filter((exercise) => !completedOnly || exercise.sets.length > 0);
   }
+
+  root.addEventListener("change", (event) => {
+    if (!planMode || !event.target.matches("[data-plan-kind], [data-plan-reps-kind], [data-plan-load-kind]")) return;
+    const exercise = event.target.closest("[data-exercise]");
+    exercise.querySelectorAll("[data-set]").forEach((set) => togglePlanSet(set, exercise));
+  });
 
   root.addEventListener("click", (event) => {
     const addSetButton = event.target.closest("[data-add-set]");
