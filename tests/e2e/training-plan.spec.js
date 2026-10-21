@@ -108,27 +108,40 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   await page.getByRole("button", { name: "建立空白課表" }).click();
   await expect(page.locator("[data-plan-select] option")).toHaveCount(2);
   await expect(page.locator("[data-plan-status]")).toContainText("已建立空白");
-  await expect(page.locator("[data-plan-new-item]")).toBeDisabled();
+  await expect(page.locator("[data-plan-new-item]")).toBeEnabled();
   expect(sheets.get("PlannedWorkouts").rows).toHaveLength(13);
 
-  await page.locator('[data-plan-workout-form] select[name="status"]').selectOption("planned");
-  await page.locator('[data-plan-workout-form] button[type="submit"]').click();
-  await expect(page.locator("[data-plan-new-item]")).toBeEnabled();
   await page.locator("[data-plan-new-item]").click();
-  await page.locator('[data-plan-item-form] input[name="exercise_name"]').fill("Pause Squat");
-  await page.locator('[data-plan-item-form] input[name="target_sets"]').fill("2");
-  await page.locator('[data-plan-item-form] select[name="reps_kind"]').selectOption("fixed");
-  await page.locator('[data-plan-item-form] input[name="reps_value"]').fill("4");
-  await page.locator('[data-plan-item-form] select[name="load_kind"]').selectOption("rpe_target");
-  await page.locator('[data-plan-item-form] input[name="load_rpe"]').fill("5");
-  await page.locator('[data-plan-item-form] button[type="submit"]').click();
-  await expect(page.locator("[data-plan-item-list]")).toContainText("Pause Squat");
-  await expect(page.locator("[data-plan-item-list]")).toContainText("2 組 · 4 次 · RPE 5");
+  await page.locator('[data-plan-exercises] [data-exercise-name]').first().fill("Pause Squat");
+  await page.locator('[data-plan-exercises] [data-set-weight]').first().fill("50");
+  await page.locator('[data-plan-exercises] [data-set-reps]').first().fill("4");
+  await page.locator('[data-plan-exercises] [data-plan-load-kind]').first().selectOption("rpe_target");
+  await page.locator('[data-plan-exercises] [data-plan-load-rpe]').first().fill("5");
+  await page.locator('[data-plan-exercises] [data-add-set]').first().click();
+  await expect(page.locator("[data-plan-exercises] [data-set]")).toHaveCount(2);
+  await page.locator("[data-plan-new-item]").click();
+  await expect(page.locator("[data-plan-exercises] [data-exercise]")).toHaveCount(2);
+  await page.locator('[data-plan-exercises] [data-exercise-name]').nth(1).fill("Romanian Deadlift");
+  await page.locator('[data-plan-exercises] [data-set-weight]').nth(2).fill("60");
+  await page.locator('[data-plan-exercises] [data-set-reps]').nth(2).fill("8");
+  await page.locator("[data-plan-save-exercises]").click();
+  await expect(page.locator("[data-plan-status]")).toContainText("已儲存 2 個動作、3 組處方");
+  await expect(page.locator("[data-plan-exercises]")).toContainText("Romanian Deadlift");
   await page.getByRole("button", { name: /Week 2/ }).click();
-  await expect(page.locator("[data-plan-item-list]")).toContainText("尚未提供");
+  await expect(page.locator("[data-plan-day-summary]")).toContainText("尚未提供");
   await page.getByRole("button", { name: /Week 1/ }).click();
-  await expect(page.locator("[data-plan-item-list]")).toContainText("Pause Squat");
-  expect(sheets.get("PlannedSets").rows).toHaveLength(2);
+  await expect(page.locator("[data-plan-exercises] [data-exercise-name]").first()).toHaveValue("Pause Squat");
+  expect(sheets.get("PlannedSets").rows).toHaveLength(4);
+  const header = sheets.get("PlannedSets").rows[0];
+  const getCol = (name) => header.indexOf(name);
+  const dataRows = sheets.get("PlannedSets").rows.slice(1);
+  expect(dataRows.map((row) => row[getCol("exercise_name")])).toEqual([
+    "Pause Squat", "Pause Squat", "Romanian Deadlift",
+  ]);
+  expect(dataRows.map((row) => row[getCol("load_kind")])).toEqual([
+    "rpe_target", "rpe_target", "fixed",
+  ]);
+  expect(dataRows.map((row) => row[getCol("set_order")])).toEqual(["1", "2", "1"]);
   expect(JSON.stringify(sheets.get("Sessions").rows)).toBe(sessionBefore);
   expect(JSON.stringify(sheets.get("Sets").rows)).toBe(setsBefore);
   expect(errors).toEqual([]);
