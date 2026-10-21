@@ -48,9 +48,10 @@ function get(set,name) {
   return set.querySelector("[data-"+kebab+"]");
 }
 export function attachPlanExercise(exercise, values = {}) {
-  exercise.dataset.exerciseGroupId = values.groupId || "";
+  const initial = values ?? {};
+  exercise.dataset.exerciseGroupId = initial.groupId || "";
   const kind = select("planKind", KINDS);
-  kind.value = values.planKind || "exercise";
+  kind.value = initial.planKind || "exercise";
   exercise.querySelector(".exercise-fields").append(label("動作用途", kind));
 }
 export function attachPlanSet(set, exercise, values = {}) {
