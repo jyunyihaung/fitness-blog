@@ -156,3 +156,37 @@
     padding: var(--space-3, .75rem);
   }
 }
+
+
+/* Shared WorkoutEditor in plan mode: set fields are targets, not completions. */
+.plan-multi-editor {
+  display: grid;
+  gap: var(--space-3, .75rem);
+  min-width: 0;
+  margin: var(--space-3, .75rem) 0;
+}
+.plan-multi-editor .exercise-editor {
+  min-width: 0;
+  max-width: 100%;
+}
+.plan-multi-editor .set-editor {
+  min-width: 0;
+}
+.plan-multi-editor .plan-target-fields {
+  margin-top: var(--space-2, .5rem);
+  padding-top: var(--space-2, .5rem);
+  border-top: 1px solid var(--color-border, #d8d8d8);
+}
+.plan-multi-editor .plan-target-fields .field {
+  min-width: 0;
+  max-width: 100%;
+}
+.plan-multi-editor .plan-target-fields .field input,
+.plan-multi-editor .plan-target-fields .field select {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+.plan-multi-editor [hidden] {
+  display: none !important;
+}
