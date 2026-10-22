@@ -85,6 +85,9 @@
     <div data-plan-day-summary>
       <p class="empty-state">請選擇訓練日。</p>
     </div>
+    <div class="form-actions">
+      <button type="button" class="button primary" data-plan-start-workout disabled>開始本日訓練</button>
+    </div>
     <form data-plan-workout-form hidden novalidate>
       <h3>訓練日資訊</h3>
       <div class="form-grid">
@@ -105,5 +108,31 @@
       <button class="button primary" type="button" data-plan-save-exercises>儲存本日所有動作</button>
     </div>
     <p class="section-lede">沒有動作的訓練日會自動標示為「尚未提供」；新增後自動視為「已有訓練內容」。如有修改，請先儲存再切換 Week／Day。</p>
+  </section>
+
+  <section class="card form-section plan-training-session" data-plan-runner hidden aria-labelledby="plan-run-title">
+    <div class="section-header section-header-with-action">
+      <div>
+        <p class="eyebrow">Workout execution</p>
+        <h2 id="plan-run-title">依教練課表訓練</h2>
+        <p class="section-lede" data-plan-run-source></p>
+      </div>
+      <button class="button" type="button" data-plan-run-cancel>返回課表</button>
+    </div>
+    <p class="save-status" data-plan-run-status role="status" aria-live="polite"></p>
+    <p class="section-lede">每組顯示教練目標；請填寫實際重量、次數與 RPE，並勾選完成。只會儲存勾選完成的組數。未指定、BW、RPE 目標、次數範圍都不會被擅自轉成實際表現。</p>
+    <form data-plan-run-form novalidate>
+      <div class="form-grid">
+        <label class="field"><span>實際訓練日期</span><input name="training_date" type="date" required></label>
+        <label class="field"><span>訓練分鐘數</span><input name="duration_minutes" type="number" min="1" value="60" required></label>
+      </div>
+      <label class="field"><span>訓練備註</span><textarea name="notes" rows="2" maxlength="2000"></textarea></label>
+      <p class="section-lede" data-plan-run-skipped hidden></p>
+      <div class="exercise-editor-list plan-run-editor" data-plan-run-exercises></div>
+      <div class="form-actions">
+        <button class="button" type="button" data-plan-run-add>＋ 臨時新增動作</button>
+        <button class="button primary" type="submit" data-plan-run-save>儲存已完成組數</button>
+      </div>
+    </form>
   </section>
 </section>
