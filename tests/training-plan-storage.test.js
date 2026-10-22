@@ -132,8 +132,8 @@ describe("Training Plan Sheets storage (Phase 1)", () => {
   it("migrates old 6-tab v1 workbooks without touching Sessions/Sets and is idempotent", async () => {
     const state = workbook();
     vi.stubGlobal("fetch", state.fetchMock);
-    const beforeSessions = JSON.stringify(state.sheets.get("Sessions").rows);
-    const beforeSets = JSON.stringify(state.sheets.get("Sets").rows);
+    const beforeSessions = JSON.stringify(state.sheets.get("Sessions").rows.slice(1));
+    const beforeSets = JSON.stringify(state.sheets.get("Sets").rows.slice(1));
     const migrated = await enableTrainingPlanStorage(ID, TOKEN);
     expect(migrated.createdSheets).toEqual(["TrainingPlans", "PlannedWorkouts", "PlannedSets"]);
     expect(state.sheets.get("TrainingPlans").rows[0]).toEqual(PLAN_HEADERS.TrainingPlans);
@@ -145,8 +145,10 @@ describe("Training Plan Sheets storage (Phase 1)", () => {
     expect(again.createdSheets).toEqual([]);
     expect(again.repairedHeaders).toEqual([]);
     expect(state.sheets.get("Schema").rows.filter((r) => r[0] === "training_plan_schema_version")).toHaveLength(1);
-    expect(JSON.stringify(state.sheets.get("Sessions").rows)).toBe(beforeSessions);
-    expect(JSON.stringify(state.sheets.get("Sets").rows)).toBe(beforeSets);
+    expect(state.sheets.get("Sessions").rows[0]).toEqual([...HEADERS.Sessions, "plan_id", "planned_workout_id"]);
+    expect(state.sheets.get("Sets").rows[0]).toEqual([...HEADERS.Sets, "planned_set_id"]);
+    expect(JSON.stringify(state.sheets.get("Sessions").rows.slice(1))).toBe(beforeSessions);
+    expect(JSON.stringify(state.sheets.get("Sets").rows.slice(1))).toBe(beforeSets);
   });
 
   it("creates, reads and updates a plan without mutating planned sets or history", async () => {
