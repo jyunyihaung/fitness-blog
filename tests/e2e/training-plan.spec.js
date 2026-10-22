@@ -124,7 +124,7 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   await page.locator('[data-plan-exercises] [data-exercise-name]').nth(1).fill("Romanian Deadlift");
   await page.locator('[data-plan-exercises] [data-set-weight]').nth(2).fill("60");
   await page.locator('[data-plan-exercises] [data-set-reps]').nth(2).fill("8");
-  await page.locator('[data-plan-exercises] [data-set-notes]').first().fill("第1組：下放控制\\n保持核心張力 <穩定>");
+  await page.locator('[data-plan-exercises] [data-set-notes]').first().fill("第1組：下放控制\n保持核心張力 <穩定>");
   await page.locator('[data-plan-exercises] [data-set-notes]').nth(1).fill("第2組：離心速度放慢");
   await page.locator("[data-plan-save-exercises]").click();
   await expect(page.locator("[data-plan-status]")).toContainText("已儲存 2 個動作、3 組處方");
