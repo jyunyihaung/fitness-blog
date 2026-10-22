@@ -27,7 +27,7 @@ function readSet(set) {
   };
 }
 
-export function createWorkoutEditor(root, { completionEnabled = false, planMode = false } = {}) {
+export function createWorkoutEditor(root, { completionEnabled = false, planMode = false, executionMode = false } = {}) {
   let exerciseOptions = [];
 
   function setExerciseOptions(exercises = []) {
@@ -57,6 +57,17 @@ export function createWorkoutEditor(root, { completionEnabled = false, planMode 
     const initial = values ?? (previous ? (planMode ? readPlanSet(previous, readSet(previous)) : readSet(previous)) : {});
     setValues(set, initial, completionEnabled);
     if (planMode) attachPlanSet(set, exercise, initial);
+    if (executionMode) {
+      // An extra ad-hoc set has no matching planned_set_id.
+      const plannedSetId = values ? values.plannedSetId : "";
+      const target = values ? values.target : "額外增加的組數（無原始處方）";
+      set.dataset.plannedSetId = plannedSetId || "";
+      set.dataset.plannedTarget = target || "";
+      const note = document.createElement("p");
+      note.className = "plan-execution-target";
+      note.textContent = "教練目標：" + (target || "未指定");
+      set.querySelector(".set-fields").before(note);
+    }
     exercise.querySelector("[data-sets]").append(fragment);
     renumber();
   }
@@ -86,7 +97,9 @@ export function createWorkoutEditor(root, { completionEnabled = false, planMode 
       name: exercise.querySelector("[data-exercise-name]").value,
       category: exercise.querySelector("[data-exercise-category]").value,
       sets: Array.from(exercise.querySelectorAll("[data-set]"))
-        .map((set) => planMode ? readPlanSet(set, readSet(set)) : readSet(set))
+        .map((set) => planMode ? readPlanSet(set, readSet(set)) : executionMode ? {
+          ...readSet(set), plannedSetId: set.dataset.plannedSetId || "",
+        } : readSet(set))
         .filter((set) => !completedOnly || set.completed),
     })).filter((exercise) => !completedOnly || exercise.sets.length > 0);
   }
