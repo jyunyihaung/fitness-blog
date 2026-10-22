@@ -1,79 +1,54 @@
-# Phase 3 — Training Plan → Completed Workout
+# Phase 3 — 從訓練課表執行並儲存實際訓練紀錄
 
-## What this phase adds
+## 本階段新增的功能
 
-1. Open **訓練課表** → select an existing non-archived plan, Week and Day.
-2. Click **開始本日訓練**. A separate execution panel opens using the same
-   nested exercise/set editor as **新增紀錄** and **快速新增**.
-3. Each set displays the original **coach target** above editable actual
-   weight (kg), repetitions, RPE, warm-up flag, set type and notes.
-4. Checking **完成** starts the existing inline rest timer automatically,
-   except after the final set of an exercise. Warm-up sets default to 90s,
-   working sets to 120s, with existing pause/adjust/reset buttons.
-5. On **儲存已完成組數**, only checked and valid sets are saved to the
-   original `Sessions` and `Sets` tables, with extra plan linkage.
-6. On success the UI returns to **紀錄列表**. Failed saves retain the
-   execution form and stable session ID so the user can retry safely.
+1. 開啟 **訓練課表**，選擇一份尚未封存的訓練計畫，以及對應的 Week（週次）和 Day（訓練日）。
+2. 點擊 **開始本日訓練**。系統會開啟獨立的訓練執行區塊，使用與 **新增紀錄**、**快速新增** 相同的多動作／多組編輯器。
+3. 每組上方會顯示原始的**教練處方目標**；下方可輸入實際重量（kg）、次數、RPE、暖身標記、組別類型及備註。
+4. 勾選 **完成** 後，系統會自動啟動既有的行內休息計時器；同一動作的最後一組不會自動啟動。暖身組預設 **90 秒**，工作組預設 **120 秒**，並保留暫停、調整時間與重設功能。
+5. 點擊 **儲存已完成組數** 後，只有已勾選完成、且通過資料驗證的組數，才會寫入原本的 `Sessions` 與 `Sets` 工作表，並建立與教練課表的關聯。
+6. 儲存成功後，介面會返回 **紀錄列表**；儲存失敗時，仍保留訓練編輯內容及固定的工作階段 ID，讓使用者可以重試。
 
-### Plan targets are NOT actual data
+## 教練目標不等於實際訓練數據
 
-- Fixed **kg** and fixed repetitions may initialize the editable fields,
-  but these are **not completed** until the user explicitly checks the set.
-- RPE targets are not actual RPE. Actual RPE is blank until entered.
-- BW, fixed lbs, ranges, "until RPE", ambiguous Excel dates, and unspecified
-  targets must be entered/confirmed manually for completed sets.
-- Steps and other `activity` goals are listed as excluded and do not become
-  fake weight-training records.
-- Extra manually added sets/exercises have an empty `planned_set_id`.
+- **固定公斤重量**及**固定次數**可以預先填入可編輯欄位，但使用者明確勾選該組 **完成** 之前，都不視為實際完成紀錄。
+- **目標 RPE** 不等於**實際 RPE**；實際 RPE 欄位一開始應為空白，由使用者自行填寫。
+- BW（自體重量）、以 lbs 設定的固定重量、次數範圍、「做到指定 RPE」、被 Excel 誤轉為日期的資料，以及未指定的處方，都必須由使用者自行輸入或確認後，才能儲存為實際組數。
+- 步數及其他 `activity`（活動）目標會列為不匯入重量訓練的項目，不會產生虛假的重量訓練紀錄。
+- 訓練時額外手動新增的動作或組數，其 `planned_set_id` 保持空白，不會假裝對應某一筆教練處方。
 
-### Schema changes
+## Google Sheets 資料結構變更
 
-There are no new required legacy fields. The optional named columns are:
+既有資料表的必要欄位**不變**，僅額外新增以下選用欄位：
 
-```
+```text
 Sessions: plan_id, planned_workout_id
 Sets: planned_set_id
 ```
 
-New workbooks include these. Existing user workbooks need a *user-confirmed*
-visit to **設定 → 啟用訓練計畫資料表**, which safely adds missing
-columns without editing historical rows.
+新建立的工作簿會包含上述欄位。既有工作簿則需由使用者確認後，進入 **設定 → 啟用訓練計畫資料表**，讓系統補齊缺少的欄位。這項操作不會改寫既有的歷史訓練資料列。
 
-A linked session has its own `session_id` created when execution starts.
-If a save might have succeeded but its HTTP response was lost, retrying uses
-the **same** ID and first checks the existing Sessions list. It does not
-append a duplicate in that ordinary retry scenario. This does not provide
-a global concurrency lock across simultaneous devices.
+每次從課表開始訓練時，系統會建立專屬的 `session_id`。如果儲存其實已成功，但 HTTP 回應遺失，重新儲存時會沿用**同一個** ID，並先查詢既有 `Sessions`，避免一般重試情況下重複新增同一堂訓練。不過，這並不代表系統具備跨裝置同時寫入的全域鎖定機制。
 
-PlannedRows ↔ actual rows remain independent. Deleting an old training plan
-is not part of this phase. Existing workout history and unlinked Quick Add
-and Add Record remain compatible.
+教練課表處方（PlannedRows）與實際完成的紀錄仍是各自獨立的資料。刪除舊訓練計畫不屬於本階段功能。既有的歷史訓練紀錄，以及未連結課表的「快速新增」與「新增紀錄」仍維持相容。
 
-### Test plan (prefer a backup Google Sheet)
+## Phase 3 功能驗收步驟（建議使用備份 Google Sheet）
 
-1. Copy the training Google Sheet and select that **backup** in the app.
-2. Open Settings and explicitly activate/repair Training Plan columns.
-3. Open a Week/Day with Squat 2+ sets, e.g. fixed kg and RPE-based targets.
-4. Click Start Workout. Confirm plan targets are visible and actual RPE is
-   empty, while BW and uncertain weights do not become invented 0 kg data.
-5. Fill **one** set and check it complete; ensure inline 90/120 second rest
-   timer starts and pause/reset/adjust are usable.
-6. Leave another set unchecked, press Save, and verify exactly one new
-   Sessions record and one Sets record.
-7. Check the session's `plan_id` and `planned_workout_id`, and that
-   completed set's `planned_set_id` points to the corresponding prescription.
-8. Repeat with a different Week/Day; verify no changes to coach prescriptions.
-9. Test invalid actual data and loss of network access: no new workout rows
-   should be created, the in-memory draft stays, and a retry is allowed.
-10. Confirm original Add Record, Quick Add and Records List continue working,
-    including responsive desktop/mobile layout.
+- [ ] **1. 建立測試副本：** 複製目前使用的訓練 Google Sheet，並在 Fitness Blog 選擇這份**備份試算表**，避免影響正式紀錄。
+- [ ] **2. 更新資料欄位：** 開啟「設定」，明確執行「啟用訓練計畫資料表」，確認訓練課表關聯欄位已建立或補齊。
+- [ ] **3. 選擇課表：** 找到包含至少兩組深蹲（Squat）的 Week／Day，例如同時包含固定公斤數及 RPE 目標的處方。
+- [ ] **4. 開始訓練：** 點擊「開始本日訓練」，確認教練目標正確顯示、實際 RPE 原本為空白，且 BW 或待確認重量不會被擅自當成 0 kg 的實際資料。
+- [ ] **5. 驗證休息計時：** 完成並勾選其中**一組**，確認 90／120 秒行內休息計時器會啟動，且可暫停、重設及調整時間。
+- [ ] **6. 驗證只儲存完成組：** 將另一組保留未完成，點擊「儲存已完成組數」，確認只新增一筆 `Sessions` 和一筆 `Sets`。
+- [ ] **7. 驗證關聯 ID：** 確認 `Sessions.plan_id`、`Sessions.planned_workout_id` 正確對應課表與訓練日，且該組 `Sets.planned_set_id` 能對應原始教練處方。
+- [ ] **8. 驗證課表不被改動：** 選擇其他 Week／Day 再執行一次，確認儲存實際數據不會修改原始教練處方。
+- [ ] **9. 驗證錯誤與重試：** 分別測試不合法的實際組數資料、網路中斷等情況；確認不會新增錯誤紀錄，訓練草稿仍留在目前頁面並允許重試。
+- [ ] **10. 驗證舊功能與裝置：** 確認「新增紀錄」、「快速新增」、「紀錄列表」仍正常，且桌機與手機的版面及操作皆可使用。
 
-The automated Playwright exercise uses synthetic Google API mocks;
-a user-authorized copy is still needed for real OAuth and network behavior.
+自動化 Playwright 測試使用的是**模擬 Google API**；真實 OAuth 授權與網路存取仍須透過經使用者同意的備份 Google Sheet 實際驗證。
 
-### Phase 4 follow-up
+## Phase 4 後續改善項目
 
-Use `Sessions.planned_workout_id` to compute completion/adherence; allow
-explicit editing of planned links in historical record edit flows and improve
-recoverable in-progress drafts across page reloads. Neither is implied by a
-successful Phase 3 log write.
+後續可透過 `Sessions.planned_workout_id` 計算課表完成率及依計畫執行的程度；也可讓使用者在歷史紀錄編輯流程中，明確調整與教練處方的關聯，並改善訓練進行中重新整理頁面後的草稿復原能力。
+
+以上功能**不包含在 Phase 3**，不能因為 Phase 3 已能儲存訓練紀錄，就視為這些後續功能已經完成。
