@@ -41,6 +41,40 @@ describe("Phase 3 planned workout execution", () => {
     expect(draft.skipped).toEqual(["Pause Squat"]);
   });
 
+  it("keeps each set's coach record below its target without copying it to actual notes", () => {
+    const draft = buildPlannedTrainingDraft(plan, workout([
+      row({ planned_set_id: "first", set_order: "1",
+        set_notes: "保持核心繃緊\n控制離心", coach_notes: "較舊的教練備註" }),
+      row({ planned_set_id: "second", exercise_order: "2", set_order: "2",
+        set_notes: "", coach_notes: "最後一組維持節奏" }),
+      row({ planned_set_id: "third", exercise_order: "3", set_order: "3",
+        set_notes: "", coach_notes: "" }),
+    ]));
+    const sets = draft.exercises[0].sets;
+    expect(sets.map((set) => set.planRecord)).toEqual([
+      "保持核心繃緊\n控制離心", "最後一組維持節奏", "",
+    ]);
+    expect(sets.every((set) => set.notes === "")).toBe(true);
+    expect(sets[0].target).toContain("RPE 5");
+    // Read-only coach records never become completed-set free-text notes.
+    const actual = structuredClone(draft.exercises);
+    actual[0].sets[0] = { ...actual[0].sets[0],
+      weightKg: "50", reps: "4", completed: true, notes: "實際完成順利" };
+    const output = prepareCompletedPlannedWorkout(draft, actual, { sessionId: "record-isolation" });
+    expect(output.records.sets[0].notes).toBe("實際完成順利");
+    expect(output.records.sets[0].notes).not.toContain("核心繃緊");
+  });
+
+  it("expands legacy multi-set rows with the same source record for every set", () => {
+    const draft = buildPlannedTrainingDraft(plan, workout([
+      row({ exercise_group_id: "", target_sets: "3", set_notes: "",
+        coach_notes: "教練紀錄：穩定下放" }),
+    ]));
+    expect(draft.exercises[0].sets).toHaveLength(3);
+    expect(draft.exercises[0].sets.map((set) => set.planRecord))
+      .toEqual(Array(3).fill("教練紀錄：穩定下放"));
+  });
+
   it("requires manual performance for bodyweight, lb, unknown and date-coerced prescriptions", () => {
     const rows = [
       row({ planned_set_id: "bw", load_kind: "bodyweight" }),
