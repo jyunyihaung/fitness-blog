@@ -124,6 +124,8 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   await page.locator('[data-plan-exercises] [data-exercise-name]').nth(1).fill("Romanian Deadlift");
   await page.locator('[data-plan-exercises] [data-set-weight]').nth(2).fill("60");
   await page.locator('[data-plan-exercises] [data-set-reps]').nth(2).fill("8");
+  await page.locator('[data-plan-exercises] [data-set-notes]').first().fill("第1組：下放控制\\n保持核心張力 <穩定>");
+  await page.locator('[data-plan-exercises] [data-set-notes]').nth(1).fill("第2組：離心速度放慢");
   await page.locator("[data-plan-save-exercises]").click();
   await expect(page.locator("[data-plan-status]")).toContainText("已儲存 2 個動作、3 組處方");
   await expect(page.locator('[data-plan-exercises] [data-exercise-name]').nth(1)).toHaveValue("Romanian Deadlift");
@@ -151,6 +153,20 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   await expect(page.locator("[data-plan-run-exercises] [data-set]")).toHaveCount(3);
   await expect(page.locator("[data-plan-run-exercises] .plan-execution-target").first())
     .toContainText("RPE 5");
+  // The original plan's Record field is displayed under each prescribed
+  // target, but never becomes an actual-set note automatically.
+  const firstSet = page.locator("[data-plan-run-exercises] [data-set]").first();
+  const secondSet = page.locator("[data-plan-run-exercises] [data-set]").nth(1);
+  await expect(firstSet.locator(".plan-execution-record")).toContainText(
+    "課表紀錄：第1組：下放控制");
+  await expect(firstSet.locator(".plan-execution-record")).toContainText(
+    "保持核心張力 <穩定>");
+  await expect(secondSet.locator(".plan-execution-record")).toHaveText(
+    "課表紀錄：第2組：離心速度放慢");
+  await expect(page.locator("[data-plan-run-exercises] .plan-execution-record")).toHaveCount(2);
+  await expect(firstSet.locator("[data-set-notes]")).toHaveValue("");
+  await expect(secondSet.locator("[data-set-notes]")).toHaveValue("");
+  await expect(firstSet.locator(".plan-execution-record strong")).toHaveCount(0);
   await page.locator('[data-plan-run-exercises] [data-set-weight]').first().fill("60");
   await page.locator('[data-plan-run-exercises] [data-set-reps]').first().fill("4");
   await page.locator('[data-plan-run-exercises] [data-set-rpe]').first().fill("6");
@@ -177,5 +193,6 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
     sheets.get("PlannedSets").rows[1][0]);
   expect(actual[actualColumns.indexOf("weight_kg")]).toBe("60");
   expect(actual[actualColumns.indexOf("rpe")]).toBe("6");
+  expect(actual[actualColumns.indexOf("notes")]).toBe("");
   expect(errors).toEqual([]);
 });
