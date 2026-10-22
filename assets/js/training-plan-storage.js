@@ -3,6 +3,7 @@
 import { readRanges, validateSpreadsheet } from "./google-sheets.js";
 import { PLAN_HEADERS, PLAN_TITLES, PLAN_SCHEMA_VERSION, validateTrainingPlanRecords } from "./training-plan-model.js";
 import { exercisesToPlannedRows, validatePlannedDayReplacement } from "./training-plan-editor.js";
+import { buildExecutionHeaderRepairs } from "./training-session-domain.js";
 
 const API_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
 const VERSION_KEY = "training_plan_schema_version";
@@ -156,6 +157,18 @@ export async function enableTrainingPlanStorage(spreadsheetId, token) {
       method: "POST", body: JSON.stringify({ valueInputOption: "RAW", data: repairs }),
     });
   }
+  // Phase 3 optional links are added when the user confirms the existing
+  // "enable plan storage" action. No legacy Sessions/Sets rows are rewritten.
+  const linkHeaders = await readRanges(spreadsheetId, token, ["Sessions!1:1", "Sets!1:1"]);
+  const linkRepairs = buildExecutionHeaderRepairs({
+    Sessions: linkHeaders[0]?.[0] ?? [],
+    Sets: linkHeaders[1]?.[0] ?? [],
+  });
+  if (linkRepairs.length) {
+    await sheetsRequest(baseUrl + "/values:batchUpdate", token, {
+      method: "POST", body: JSON.stringify({ valueInputOption: "RAW", data: linkRepairs }),
+    });
+  }
   if (!rows.length) {
     const schemaHeaders = schema.headers;
     if (!schemaHeaders.includes("key") || !schemaHeaders.includes("value")) {
@@ -172,7 +185,7 @@ export async function enableTrainingPlanStorage(spreadsheetId, token) {
     });
   }
   await planReadContext(spreadsheetId, token);
-  return { createdSheets: missing, repairedHeaders: repairs.map((item) => item.range), version: PLAN_SCHEMA_VERSION };
+  return { createdSheets: missing, repairedHeaders: [...repairs, ...linkRepairs].map((item) => item.range), version: PLAN_SCHEMA_VERSION };
 }
 
 // Read-only. Does not auto-create tabs or migrate existing user workbooks.
