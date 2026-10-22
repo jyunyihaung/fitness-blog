@@ -14,7 +14,7 @@ const TOKEN = "unit-test-token";
 function workbook() {
   let nextId = 6;
   const sheets = new Map(Object.entries(HEADERS).map(([name, headers], id) => [
-    name, { id, rows: [headers] },
+    name, { id, rows: [[...headers]] },
   ]));
   sheets.get("Schema").rows.push(
     ["app_id", "powerlifting-training-tracker"], ["schema_version", "1"],
