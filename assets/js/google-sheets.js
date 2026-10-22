@@ -560,3 +560,53 @@ export async function syncUsedExercises(spreadsheetId, accessToken, workoutExerc
 }
 
 export { HEADERS };
+
+
+// Phase 3: linked records require optional columns but preserve v1 CRUD.
+// Check the stable session_id on retry after an uncertain API response.
+export async function appendLinkedWorkoutRecord(spreadsheetId, accessToken, record) {
+  if (!record?.session?.session_id || !record.session.plan_id || !record.session.planned_workout_id ||
+      !Array.isArray(record.sets) || record.sets.length === 0) {
+    throw new Error("訓練課表來源或已完成組數不完整。");
+  }
+  if (record.sets.some((set) => set.session_id !== record.session.session_id)) {
+    throw new Error("訓練組數與工作階段識別碼不一致。");
+  }
+  const base = API_BASE + "/" + encodeURIComponent(spreadsheetId);
+  const fields = encodeURIComponent("sheets.properties(sheetId,title)");
+  const [metadata, valuesByRange] = await Promise.all([
+    apiRequest(base + "?fields=" + fields, accessToken),
+    readRanges(spreadsheetId, accessToken, ["Sessions", "Sets!1:1"]),
+  ]);
+  const sheetIds = new Map(metadata.sheets?.map((sheet) => [
+    sheet.properties?.title, sheet.properties?.sheetId,
+  ]));
+  const sessions = sheetRowRecords(valuesByRange[0] ?? []);
+  const sessionHeaders = sessions.headers;
+  const setHeaders = (valuesByRange[1]?.[0] ?? []).map(String);
+  for (const [title, headers, additional] of [
+    ["Sessions", sessionHeaders, ["plan_id", "planned_workout_id"]],
+    ["Sets", setHeaders, ["planned_set_id"]],
+  ]) {
+    if (!Number.isInteger(sheetIds.get(title))) throw new Error("缺少 " + title + " 工作表。");
+    const missing = [...HEADERS[title], ...additional].filter((name) => !headers.includes(name));
+    if (missing.length) throw new Error(title + " 尚未建立訓練課表關聯欄位，請至設定執行欄位更新：" + missing.join(", "));
+  }
+  const sameId = sessions.rows.filter(({ record: row }) => row.session_id === record.session.session_id);
+  if (sameId.length > 1) throw new Error("發現重複工作階段 ID，請先確認試算表資料。");
+  if (sameId.length) {
+    const stored = sameId[0].record;
+    if (stored.plan_id !== record.session.plan_id ||
+        stored.planned_workout_id !== record.session.planned_workout_id) {
+      throw new Error("工作階段 ID 已被其他課表紀錄使用。");
+    }
+    return { sessionId: record.session.session_id, alreadyExists: true };
+  }
+  await apiRequest(base + ":batchUpdate", accessToken, {
+    method: "POST",
+    body: JSON.stringify({
+      requests: buildWorkoutAppendRequests(sheetIds, sessionHeaders, setHeaders, record),
+    }),
+  });
+  return { sessionId: record.session.session_id, alreadyExists: false };
+}
