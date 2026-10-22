@@ -190,3 +190,36 @@
 .plan-multi-editor [hidden] {
   display: none !important;
 }
+
+
+/* Phase 3: actual workout execution is distinct from editing the coach plan. */
+.plan-training-session {
+  min-width: 0;
+  scroll-margin-top: 2rem;
+}
+.plan-run-editor {
+  display: grid;
+  gap: var(--space-3, .75rem);
+  margin: var(--space-4, 1rem) 0;
+  min-width: 0;
+}
+.plan-run-editor [data-exercise], .plan-run-editor [data-set] {
+  min-width: 0;
+  max-width: 100%;
+}
+.plan-execution-target {
+  margin: 0 0 var(--space-2, .5rem);
+  font-size: .9rem;
+  color: var(--color-muted, #616b75);
+  font-weight: 600;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.plan-training-session [data-completion-field] {
+  font-weight: 600;
+}
+@media (max-width: 44rem) {
+  .plan-training-session .form-actions button {
+    flex: 1 1 10rem;
+  }
+}
