@@ -66,7 +66,15 @@ export function createWorkoutEditor(root, { completionEnabled = false, planMode 
       const note = document.createElement("p");
       note.className = "plan-execution-target";
       note.textContent = "教練目標：" + (target || "未指定");
-      set.querySelector(".set-fields").before(note);
+      const fields = set.querySelector(".set-fields");
+      fields.before(note);
+      const planRecord = String(values?.planRecord ?? "").trim();
+      if (planRecord) {
+        const record = document.createElement("p");
+        record.className = "plan-execution-record";
+        record.textContent = "課表紀錄：" + planRecord;
+        fields.before(record);
+      }
     }
     exercise.querySelector("[data-sets]").append(fragment);
     renumber();
