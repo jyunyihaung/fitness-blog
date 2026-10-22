@@ -144,5 +144,34 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   expect(dataRows.map((row) => row[getCol("set_order")])).toEqual(["1", "2", "1"]);
   expect(JSON.stringify(sheets.get("Sessions").rows.slice(1))).toBe(sessionBefore);
   expect(JSON.stringify(sheets.get("Sets").rows.slice(1))).toBe(setsBefore);
+
+  await expect(page.locator("[data-plan-start-workout]")).toBeEnabled();
+  await page.locator("[data-plan-start-workout]").click();
+  await expect(page.locator("[data-plan-runner]")).toBeVisible();
+  await expect(page.locator("[data-plan-run-exercises] [data-set]")).toHaveCount(3);
+  await expect(page.locator("[data-plan-run-exercises] .plan-execution-target").first())
+    .toContainText("RPE 5");
+  await page.locator('[data-plan-run-exercises] [data-set-weight]').first().fill("60");
+  await page.locator('[data-plan-run-exercises] [data-set-reps]').first().fill("4");
+  await page.locator('[data-plan-run-exercises] [data-set-rpe]').first().fill("6");
+  await page.locator('[data-plan-run-exercises] [data-set-completed]').first().check();
+  await expect(page.locator('[data-plan-run-exercises] [data-set]').first()
+    .locator("[data-inline-rest]")).toHaveAttribute("data-rest-state", "running");
+  await page.locator("[data-plan-run-save]").click();
+  await expect(page).toHaveURL(/#\\/records$/);
+  expect(sheets.get("Sessions").rows).toHaveLength(2);
+  expect(sheets.get("Sets").rows).toHaveLength(2);
+  const sessionColumns = sheets.get("Sessions").rows[0];
+  const session = sheets.get("Sessions").rows[1];
+  expect(session[sessionColumns.indexOf("plan_id")]).toBe(
+    sheets.get("TrainingPlans").rows[1][0]);
+  expect(session[sessionColumns.indexOf("planned_workout_id")]).toBe(
+    sheets.get("PlannedWorkouts").rows[1][0]);
+  const actualColumns = sheets.get("Sets").rows[0];
+  const actual = sheets.get("Sets").rows[1];
+  expect(actual[actualColumns.indexOf("planned_set_id")]).toBe(
+    sheets.get("PlannedSets").rows[1][0]);
+  expect(actual[actualColumns.indexOf("weight_kg")]).toBe("60");
+  expect(actual[actualColumns.indexOf("rpe")]).toBe("6");
   expect(errors).toEqual([]);
 });
