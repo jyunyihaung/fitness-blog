@@ -158,7 +158,7 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   await expect(page.locator('[data-plan-run-exercises] [data-set]').first()
     .locator("[data-inline-rest]")).toHaveAttribute("data-rest-state", "running");
   await page.locator("[data-plan-run-save]").click();
-  await expect(page).toHaveURL(/#\\/records$/);
+  await expect(page).toHaveURL(/records$/);
   expect(sheets.get("Sessions").rows).toHaveLength(2);
   expect(sheets.get("Sets").rows).toHaveLength(2);
   const sessionColumns = sheets.get("Sessions").rows[0];
