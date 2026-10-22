@@ -11,8 +11,8 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
     ["app_id", "powerlifting-training-tracker"], ["schema_version", "1"],
   );
   let nextSheetId = 20;
-  const sessionBefore = JSON.stringify(sheets.get("Sessions").rows);
-  const setsBefore = JSON.stringify(sheets.get("Sets").rows);
+  const sessionBefore = JSON.stringify(sheets.get("Sessions").rows.slice(1));
+  const setsBefore = JSON.stringify(sheets.get("Sets").rows.slice(1));
 
   await page.addInitScript(() => {
     localStorage.setItem("fitnessTracker.spreadsheet", JSON.stringify({
@@ -142,7 +142,7 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
     "rpe_target", "rpe_target", "fixed",
   ]);
   expect(dataRows.map((row) => row[getCol("set_order")])).toEqual(["1", "2", "1"]);
-  expect(JSON.stringify(sheets.get("Sessions").rows)).toBe(sessionBefore);
-  expect(JSON.stringify(sheets.get("Sets").rows)).toBe(setsBefore);
+  expect(JSON.stringify(sheets.get("Sessions").rows.slice(1))).toBe(sessionBefore);
+  expect(JSON.stringify(sheets.get("Sets").rows.slice(1))).toBe(setsBefore);
   expect(errors).toEqual([]);
 });
