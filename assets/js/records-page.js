@@ -199,7 +199,8 @@ window.addEventListener("fitness:route-change", (event) => {
 window.addEventListener("fitness:data-changed", () => {
   if (window.location.hash === "#/records") loadRecords();
 });
-\nwindow.addEventListener("fitness:record-saved", (event) => {
+
+window.addEventListener("fitness:record-saved", (event) => {
   expectedSavedSessionId = event.detail?.sessionId || "";
   if (window.location.hash === "#/records") loadRecords();
 });
