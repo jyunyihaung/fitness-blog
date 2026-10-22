@@ -25,6 +25,7 @@ const planExercises = page.querySelector("[data-plan-exercises]");
 const planEditor = createWorkoutEditor(planExercises, { planMode: true });
 const newItemButton = page.querySelector("[data-plan-new-item]");
 const saveExercisesButton = page.querySelector("[data-plan-save-exercises]");
+const startButton = page.querySelector("[data-plan-start-workout]");
 planEditor.setExerciseOptions(appState.get("exercises"));
 
 let records = { plans: [], workouts: [], sets: [] };
@@ -123,6 +124,7 @@ function renderDay() {
   workoutForm.hidden = !day;
   newItemButton.disabled = !day;
   saveExercisesButton.disabled = !day;
+  startButton.disabled = !day || !day.items.length || current()?.status === "archived";
   if (!day) {
     planEditor.load([]);
     daySummary.append(textNode("p", "本週沒有提供這一天的課表。", "empty-state"));
@@ -183,6 +185,7 @@ async function operation(handler) {
     setBusy(false);
     newItemButton.disabled = !selectedDay();
     saveExercisesButton.disabled = !selectedDay();
+    startButton.disabled = !selectedDay()?.items?.length || current()?.status === "archived";
   }
 }
 
@@ -278,6 +281,21 @@ workoutForm.addEventListener("submit", (event) => {
     await reload();
     showStatus("訓練日資訊已儲存。", "success");
   });
+});
+
+startButton.addEventListener("click", () => {
+  const plan = current();
+  const workout = selectedDay();
+  if (!plan || !workout || !workout.items?.length || saving) return;
+  // Publish only the currently selected plan/day; no credentials or raw Sheet
+  // data is stored in localStorage or included in route query parameters.
+  window.dispatchEvent(new CustomEvent("fitness:training-plan-start", {
+    detail: { plan, workout, spreadsheetId: getConnection().id },
+  }));
+});
+
+window.addEventListener("fitness:training-plan-exit", () => {
+  renderPlan();
 });
 
 newItemButton.addEventListener("click", () => {
