@@ -23,7 +23,6 @@ const managerSections = [
   page.querySelector("[data-plan-workspace]"),
 ].filter(Boolean);
 const add = page.querySelector("[data-plan-run-add]");
-const submit = page.querySelector("[data-plan-run-save]");
 let active = null;
 let busy = false;
 
