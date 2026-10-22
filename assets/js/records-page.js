@@ -157,7 +157,11 @@ function renderRecords(workouts) {
   workouts.forEach((workout) => output.append(renderSession(workout, editable)));
 }
 
+let loadGeneration = 0;
+let expectedSavedSessionId = "";
+
 async function loadRecords() {
+  const generation = ++loadGeneration;
   setStatus("正在讀取訓練紀錄…", "loading");
   const selected = getSelectedSpreadsheet();
   const publicSpreadsheetId = window.FitnessConfig?.googleSheets?.spreadsheetId?.trim();
@@ -173,8 +177,16 @@ async function loadRecords() {
       setStatus("Google 授權尚未建立或已過期，請回到 Dashboard 重新連線。", "authorization-error");
       return;
     }
-    renderRecords(await getWorkoutData({ spreadsheetId, accessToken }));
+    const workouts = await getWorkoutData({ spreadsheetId, accessToken });
+    if (generation !== loadGeneration) return;
+    renderRecords(workouts);
+    if (expectedSavedSessionId) {
+      const found = workouts.some((workout) => workout.id === expectedSavedSessionId);
+      if (!found) setStatus("儲存請求已完成，但目前的訓練紀錄未找到新 Session。請檢查 Google Sheet 的 Sessions/Sets、所選試算表及重新連線狀態。", "error");
+      expectedSavedSessionId = "";
+    }
   } catch (error) {
+    if (generation !== loadGeneration) return;
     reportAppError("load-record-list", error);
     setStatus(describeError(error), "error");
   }
@@ -185,5 +197,9 @@ window.addEventListener("fitness:route-change", (event) => {
 });
 
 window.addEventListener("fitness:data-changed", () => {
+  if (window.location.hash === "#/records") loadRecords();
+});
+\nwindow.addEventListener("fitness:record-saved", (event) => {
+  expectedSavedSessionId = event.detail?.sessionId || "";
   if (window.location.hash === "#/records") loadRecords();
 });
