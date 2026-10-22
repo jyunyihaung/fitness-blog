@@ -159,6 +159,10 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
     .locator("[data-inline-rest]")).toHaveAttribute("data-rest-state", "running");
   await page.locator("[data-plan-run-save]").click();
   await expect(page).toHaveURL(/records$/);
+  await expect(page.locator("[data-records-output]")).toContainText("Week 1 Day 1");
+  await expect(page.locator("[data-records-output]")).toContainText("Pause Squat");
+  await expect(page.locator("[data-records-output]")).toContainText("60 kg");
+  await expect(page.locator("[data-records-status]")).toBeHidden();
   expect(sheets.get("Sessions").rows).toHaveLength(2);
   expect(sheets.get("Sets").rows).toHaveLength(2);
   const sessionColumns = sheets.get("Sessions").rows[0];
