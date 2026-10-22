@@ -215,6 +215,14 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+.plan-execution-record {
+  margin: 0 0 var(--space-3, .75rem);
+  font-size: .9rem;
+  color: var(--color-muted, #616b75);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .plan-training-session [data-completion-field] {
   font-weight: 600;
 }
