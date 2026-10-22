@@ -124,7 +124,7 @@ function renderDay() {
   workoutForm.hidden = !day;
   newItemButton.disabled = !day;
   saveExercisesButton.disabled = !day;
-  startButton.disabled = !day || !day.items.length || current()?.status === "archived";
+  startButton.disabled = !day || !day.items.some((row) => row.item_kind !== "activity") || current()?.status === "archived";
   if (!day) {
     planEditor.load([]);
     daySummary.append(textNode("p", "本週沒有提供這一天的課表。", "empty-state"));
@@ -185,7 +185,7 @@ async function operation(handler) {
     setBusy(false);
     newItemButton.disabled = !selectedDay();
     saveExercisesButton.disabled = !selectedDay();
-    startButton.disabled = !selectedDay()?.items?.length || current()?.status === "archived";
+    startButton.disabled = !selectedDay()?.items?.some((row) => row.item_kind !== "activity") || current()?.status === "archived";
   }
 }
 
