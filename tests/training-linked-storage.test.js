@@ -37,8 +37,9 @@ function fakeWorkbook({ includeLinks = true } = {}) {
     if (path.endsWith("/values:batchGet")) {
       const ranges = new URL(url).searchParams.getAll("ranges");
       return get({ valueRanges: ranges.map((range) => ({
-        values: tables.get(range.split("!")[0]).rows
-          .slice(0, range.endsWith("!1:1") ? 1 : undefined),
+        values: range.endsWith("!1:1")
+          ? tables.get(range.split("!")[0]).rows.slice(0, 1)
+          : tables.get(range.split("!")[0]).rows,
       })) });
     }
     if (path.endsWith(":batchUpdate") && options.method === "POST") {
