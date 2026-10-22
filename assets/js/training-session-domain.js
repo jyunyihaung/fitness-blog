@@ -55,6 +55,9 @@ export function buildPlannedTrainingDraft(plan, workout, { now = new Date() } = 
         return {
           plannedSetId: set.plannedSetId || (isLegacy ? exercise.groupId : ""),
           target: original ? formatPlannedItem(original) : "請確認教練目標",
+          // The plan's 「紀錄」 belongs to the prescription. Show it below
+          // the coach target, never prefill the editable actual-set notes.
+          planRecord: String(set.notes ?? ""),
           // Never copy a planned RPE into actual RPE; do not invent BW/kg or
           // reps for ranges, RPE-until, and date-coerced cells.
           weightKg: weightIsKg ? set.weightKg : "",
