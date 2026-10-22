@@ -61,13 +61,12 @@ function createId() {
   return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
 }
 
-export function createWorkoutRecords(input) {
-  const sessionId = createId();
+export function createWorkoutRecords(input, { sessionId = createId(), startedAt = "", endedAt = "" } = {}) {
   const now = new Date().toISOString();
   const session = {
     session_id: sessionId,
-    started_at: "",
-    ended_at: "",
+    started_at: startedAt,
+    ended_at: endedAt,
     training_date: input.trainingDate,
     title: input.title.trim(),
     body_weight_kg: "",
