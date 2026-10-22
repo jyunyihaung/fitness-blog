@@ -1,6 +1,7 @@
 import { googleApiError, schemaError } from "./app-error.js";
 import { parseExercises, planExerciseSync } from "./exercises.js";
 import { PLAN_TITLES, PLAN_HEADERS, PLAN_SCHEMA_VERSION } from "./training-plan-model.js";
+import { EXECUTION_LINK_HEADERS } from "./training-session-domain.js";
 
 const API_BASE = "https://sheets.googleapis.com/v4/spreadsheets";
 const PICKER_SRC = "https://apis.google.com/js/api.js";
@@ -131,7 +132,10 @@ export async function createTrainingSpreadsheet(accessToken) {
   });
   const spreadsheetId = spreadsheet.spreadsheetId;
   const now = new Date().toISOString();
-  const data = Object.entries({ ...HEADERS, ...PLAN_HEADERS }).map(([title, headers]) => ({ range: `${title}!A1`, values: [headers] }));
+  const data = Object.entries({ ...HEADERS, ...PLAN_HEADERS }).map(([title, headers]) => ({
+    range: title + "!A1",
+    values: [[...headers, ...(EXECUTION_LINK_HEADERS[title] ?? [])]],
+  }));
   data.push(
     { range: "Schema!A2", values: [["app_id", "powerlifting-training-tracker"], ["schema_version", "1"], ["created_at", now], ["last_migrated_at", now], ["training_plan_schema_version", PLAN_SCHEMA_VERSION]] },
     { range: "Settings!A2", values: [["weight_unit", "kg", now], ["locale", "zh-TW", now], ["theme", "system", now], ["default_rpe_enabled", "false", now]] },
