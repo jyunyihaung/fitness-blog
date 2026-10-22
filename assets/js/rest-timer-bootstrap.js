@@ -210,6 +210,17 @@ function setupRecordTimers() {
   createInlineRestManager(page, { defaultSeconds: ADD_RECORD_REST_SECONDS });
 }
 
+function setupPlannedTrainingTimers() {
+  const page = document.querySelector("[data-plan-runner]");
+  if (!page) return;
+  const manager = createInlineRestManager(page, {
+    defaultSeconds: ADD_RECORD_REST_SECONDS,
+    autoStartOnComplete: true,
+    getSeconds: (set) => isWarmupSet(set) ? WARMUP_REST_SECONDS : ADD_RECORD_REST_SECONDS,
+  });
+  window.addEventListener("fitness:training-plan-stop", () => manager.stop({ restore: true }));
+}
+
 function setupQuickAddTimers() {
   const page = document.querySelector("[data-route-page='/quick-add']");
   if (!page) return;
@@ -237,4 +248,5 @@ function setupQuickAddTimers() {
 if (typeof document !== "undefined") {
   setupRecordTimers();
   setupQuickAddTimers();
+  setupPlannedTrainingTimers();
 }
