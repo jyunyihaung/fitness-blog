@@ -110,7 +110,8 @@ form.addEventListener("submit", async (event) => {
   showStatus("正在儲存已完成組數…");
   try {
     const token = googleAuth.getValidAccessToken() ?? await googleAuth.getAccessToken();
-    const result = await appendLinkedWorkoutRecord(active.spreadsheetId, token, prepared.records);
+    const activeSpreadsheetId = active.spreadsheetId;
+    const result = await appendLinkedWorkoutRecord(activeSpreadsheetId, token, prepared.records);
     // The linked workout itself is already safe if exercise master sync fails.
     if (!result.alreadyExists) {
       try {
@@ -125,6 +126,11 @@ form.addEventListener("submit", async (event) => {
     showStatus(result.alreadyExists ? "已存在相同工作階段紀錄，沒有重複寫入。" : "已完成儲存。", "success");
     end({ saved: true });
     window.location.hash = "/records";
+    // A user may already be on the records route (or the hash may not
+    // trigger a change). Notify it to refresh only after the save settles.
+    window.dispatchEvent(new CustomEvent("fitness:record-saved", {
+      detail: { sessionId: result.sessionId, spreadsheetId: activeSpreadsheetId },
+    }));
   } catch (error) {
     reportAppError("save-linked-training-session", error);
     showStatus(safeErrorMessage(error, "儲存失敗，請重試。完成組數及訓練 ID 均已保留。"), "error");
