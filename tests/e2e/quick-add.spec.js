@@ -17,6 +17,12 @@ test("Quick Add generates an editable warm-up + working-set workout from manual 
   await expect(page.locator("[data-preview-warmup]")).not.toHaveText("未加入");
   await expect(page.locator("[data-quick-exercises]")).toBeVisible();
   await expect(page.locator("[data-save-quick-workout]")).toBeVisible();
+  const exercise = page.locator('[data-quick-exercises] [data-exercise]').first();
+  await exercise.locator('[data-set-rpe]').last().fill('8');
+  await exercise.locator('[data-set-completed]').last().check();
+  await exercise.locator('[data-add-set]').click();
+  await expect(exercise.locator('[data-set-completed]').last()).not.toBeChecked();
+  await expect(exercise.locator('[data-set-rpe]').last()).toHaveValue('');
 });
 
 test("Quick Add can generate without warm-up sets", async ({ page }) => {

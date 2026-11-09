@@ -378,7 +378,28 @@ export async function replaceWorkoutRecord(spreadsheetId, accessToken, sessionId
     notes: record.session.notes,
     updated_at: now,
   };
-  record.sets = record.sets.map((set) => ({ ...set, session_id: sessionId, updated_at: now }));
+  // Match persisted identity, never exercise names or row positions. Read the
+  // source links afresh so the editor cannot invent or change a plan mapping.
+  const originalSets = new Map(context.sets.rows
+    .filter((row) => row.record.session_id === sessionId && row.record.set_id)
+    .map((row) => [row.record.set_id, row.record]));
+  const foreignIds = new Set(context.sets.rows
+    .filter((row) => row.record.session_id !== sessionId)
+    .map((row) => row.record.set_id));
+  const seenIds = new Set();
+  record.sets = record.sets.map((set) => {
+    if (!set.set_id || seenIds.has(set.set_id) || foreignIds.has(set.set_id)) {
+      throw new Error("訓練組別 ID 無效或重複，請重新載入紀錄。");
+    }
+    seenIds.add(set.set_id);
+    const original = originalSets.get(set.set_id);
+    return {
+      ...original, ...set, session_id: sessionId,
+      planned_set_id: original?.planned_set_id || "",
+      created_at: original?.created_at || set.created_at,
+      updated_at: now,
+    };
+  });
   const setRows = context.sets.rows.filter((row) => row.record.session_id === sessionId).map((row) => row.rowIndex);
   const requests = buildWorkoutReplaceRequests(
     context.sheetIds,

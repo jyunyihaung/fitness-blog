@@ -57,6 +57,8 @@ function editDraft(workout) {
       name: exercise.name,
       category: exercise.category,
       sets: exercise.sets.map((set) => ({
+        setId: set.setId,
+        plannedSetId: set.plannedSetId,
         weightKg: String(set.weight),
         reps: String(set.reps),
         rpe: set.rpe === null ? "" : String(set.rpe),

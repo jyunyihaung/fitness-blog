@@ -17,6 +17,8 @@ function setValues(set, values = {}, completionEnabled = false) {
 
 function readSet(set) {
   return {
+    setId: set.dataset.setId || "",
+    plannedSetId: set.dataset.plannedSetId || "",
     weightKg: set.querySelector("[data-set-weight]").value,
     reps: set.querySelector("[data-set-reps]").value,
     rpe: set.querySelector("[data-set-rpe]").value,
@@ -55,8 +57,13 @@ export function createWorkoutEditor(root, { completionEnabled = false, planMode 
     const fragment = setTemplate.content.cloneNode(true);
     const set = fragment.querySelector("[data-set]");
     const initial = values ?? (previous ? (planMode ? readPlanSet(previous, readSet(previous)) : readSet(previous)) : {});
-    setValues(set, initial, completionEnabled);
-    if (planMode) attachPlanSet(set, exercise, initial);
+    // Only explicitly loaded rows retain identity or completion. A new set
+    // may reuse load/reps, but has not been performed or assigned an RPE.
+    const next = values ? initial : { ...initial, completed: false, rpe: "" };
+    set.dataset.setId = values?.setId || "";
+    set.dataset.plannedSetId = values?.plannedSetId || "";
+    setValues(set, next, completionEnabled);
+    if (planMode) attachPlanSet(set, exercise, values ? initial : { ...initial, plannedSetId: "", sourceRow: "" });
     if (executionMode) {
       // An extra ad-hoc set has no matching planned_set_id.
       const plannedSetId = values ? values.plannedSetId : "";

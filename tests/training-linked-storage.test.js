@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { HEADERS, appendLinkedWorkoutRecord } from "../assets/js/google-sheets.js";
+import { HEADERS, appendLinkedWorkoutRecord, replaceWorkoutRecord } from "../assets/js/google-sheets.js";
 
 const SHEET = "linked-training-test";
 const TOKEN = "synthetic-token";
@@ -46,9 +46,19 @@ function fakeWorkbook({ includeLinks = true } = {}) {
       const requests = JSON.parse(options.body).requests;
       writes.push(requests);
       for (const request of requests) {
-        const table = [...tables.values()].find((t) => t.id === request.appendCells.sheetId);
-        for (const row of request.appendCells.rows) {
-          table.rows.push(row.values.map(v => v.userEnteredValue.stringValue));
+        if (request.deleteDimension) {
+          const range = request.deleteDimension.range;
+          const table = [...tables.values()].find((t) => t.id === range.sheetId);
+          table.rows.splice(range.startIndex, range.endIndex - range.startIndex);
+        } else if (request.updateCells) {
+          const update = request.updateCells;
+          const table = [...tables.values()].find((t) => t.id === update.range.sheetId);
+          table.rows[update.range.startRowIndex] = update.rows[0].values.map(v => v.userEnteredValue.stringValue);
+        } else if (request.appendCells) {
+          const table = [...tables.values()].find((t) => t.id === request.appendCells.sheetId);
+          for (const row of request.appendCells.rows) {
+            table.rows.push(row.values.map(v => v.userEnteredValue.stringValue));
+          }
         }
       }
       return get({});
@@ -101,5 +111,63 @@ describe("Linked actual workout Sheets append (Phase 3)", () => {
     await expect(appendLinkedWorkoutRecord(SHEET, TOKEN, wrongPlan))
       .rejects.toThrow("其他課表");
     expect(state.writes).toHaveLength(1);
+  });
+});
+
+
+describe("Editing linked actual sets", () => {
+  it("retains identity and stored linkage across rename/reorder/delete, with reordered headers", async () => {
+    const state = fakeWorkbook();
+    for (const table of state.tables.values()) table.rows[0].reverse();
+    vi.stubGlobal("fetch", state.handler);
+    const original = record();
+    original.sets[0].created_at = "original-created-at";
+    original.sets.push({ ...original.sets[0], set_id: "removed-set", planned_set_id: "removed-source" });
+    await appendLinkedWorkoutRecord(SHEET, TOKEN, original);
+    const edited = record();
+    edited.sets = [
+      { ...edited.sets[0], set_id: "new-extra", planned_set_id: "invented-source" },
+      { ...edited.sets[0], exercise_name: "Renamed Squat", weight_kg: "65", planned_set_id: "changed-source" },
+    ];
+    await replaceWorkoutRecord(SHEET, TOKEN, "session-one", edited);
+    const rows = state.tables.get("Sets").rows;
+    const asObject = row => Object.fromEntries(rows[0].map((h, i) => [h, row[i]]));
+    expect(rows.slice(1).map(asObject)).toEqual([
+      expect.objectContaining({ set_id: "new-extra", planned_set_id: "" }),
+      expect.objectContaining({ set_id: "actual-set", planned_set_id: "planned-set",
+        exercise_name: "Renamed Squat", weight_kg: "65", created_at: "original-created-at" }),
+    ]);
+    const sessions = state.tables.get("Sessions").rows;
+    expect(sessions[1][sessions[0].indexOf("plan_id")]).toBe("plan-a");
+    expect(sessions[1][sessions[0].indexOf("planned_workout_id")]).toBe("day-1");
+  });
+
+  it("edits legacy unlinked records without requiring linkage headers", async () => {
+    const state = fakeWorkbook({ includeLinks: false });
+    vi.stubGlobal("fetch", state.handler);
+    const insert = (title, value) => {
+      const table = state.tables.get(title);
+      table.rows.push(table.rows[0].map(h => value[h] || ""));
+    };
+    insert("Sessions", record().session);
+    insert("Sets", record().sets[0]);
+    await replaceWorkoutRecord(SHEET, TOKEN, "session-one", record());
+    expect(state.tables.get("Sets").rows).toHaveLength(2);
+  });
+
+  it("rejects duplicate set IDs and IDs belonging to another session before writing", async () => {
+    const state = fakeWorkbook();
+    vi.stubGlobal("fetch", state.handler);
+    await appendLinkedWorkoutRecord(SHEET, TOKEN, record());
+    const duplicate = record();
+    duplicate.sets.push({ ...duplicate.sets[0] });
+    await expect(replaceWorkoutRecord(SHEET, TOKEN, "session-one", duplicate)).rejects.toThrow("ID");
+    const foreign = record("session-two");
+    foreign.sets[0].set_id = "foreign-set";
+    await appendLinkedWorkoutRecord(SHEET, TOKEN, foreign);
+    const edited = record();
+    edited.sets[0].set_id = "foreign-set";
+    await expect(replaceWorkoutRecord(SHEET, TOKEN, "session-one", edited)).rejects.toThrow("ID");
+    expect(state.writes).toHaveLength(2);
   });
 });

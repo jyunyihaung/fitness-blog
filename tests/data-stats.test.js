@@ -10,10 +10,12 @@ describe("workout mapping and statistics", () => {
     ];
     const sets = [
       { session_id: "new", exercise_name: "Squat", exercise_category: "squat", set_order: "2", weight_kg: "110", reps: "3" },
-      { session_id: "new", exercise_name: "Squat", exercise_category: "squat", set_order: "1", weight_kg: "100", reps: "5" },
+      { session_id: "new", exercise_name: "Squat", exercise_category: "squat", set_order: "1", set_id: "actual-1", planned_set_id: "planned-1", weight_kg: "100", reps: "5" },
     ];
     const workouts = mapSheetRecordsToWorkouts(sessions, sets);
     expect(workouts.map((workout) => workout.id)).toEqual(["new", "old"]);
+    expect(workouts[0].exercises[0].sets[0]).toMatchObject({ setId: "actual-1", plannedSetId: "planned-1" });
+    expect(workouts[0].exercises[0].sets[1]).toMatchObject({ setId: "", plannedSetId: "" });
     expect(workouts[0].exercises[0].category).toBe("squat");
     expect(workouts[0].exercises[0].sets.map((set) => set.weight)).toEqual([100, 110]);
   });

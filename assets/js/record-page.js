@@ -340,7 +340,7 @@ async function initialize() {
     try {
       const accessToken = await oauth.getAccessToken();
       setStatus("正在寫入 Google Sheet…");
-      const record = createWorkoutRecords(input);
+      const record = createWorkoutRecords(input, { preserveSetIds: Boolean(editingSessionId) });
       if (editingSessionId) await replaceWorkoutRecord(selectedSpreadsheet.id, accessToken, editingSessionId, record);
       else await appendWorkoutRecord(selectedSpreadsheet.id, accessToken, record);
       try {

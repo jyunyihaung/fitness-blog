@@ -88,6 +88,8 @@ function groupExercises(sets) {
         sets: [],
       };
       exercise.sets.push({
+        setId: set.set_id || "",
+        plannedSetId: set.planned_set_id || "",
         weight: toNumber(set.weight_kg),
         reps: toNumber(set.reps),
         rpe: set.rpe ? toNumber(set.rpe) : null,
