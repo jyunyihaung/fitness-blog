@@ -37,6 +37,15 @@ describe("workout record validation", () => {
     expect(validateWorkoutInput(input)).toHaveLength(6);
   });
 
+  it("preserves loaded set IDs only for edits and generates new IDs for added sets", () => {
+    const input = validInput();
+    input.exercises[0].sets[0].setId = "persisted-set";
+    const edited = createWorkoutRecords(input, { preserveSetIds: true });
+    expect(edited.sets[0].set_id).toBe("persisted-set");
+    expect(edited.sets[1].set_id).toMatch(/^[0-9a-f-]{36}$/);
+    expect(createWorkoutRecords(input).sets[0].set_id).not.toBe("persisted-set");
+  });
+
   it("creates linked Sessions and Sets records", () => {
     const records = createWorkoutRecords(validInput());
     expect(records.session.title).toBe("Squat day");

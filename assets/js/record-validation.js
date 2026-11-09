@@ -61,7 +61,7 @@ function createId() {
   return `${hex.slice(0, 4).join("")}-${hex.slice(4, 6).join("")}-${hex.slice(6, 8).join("")}-${hex.slice(8, 10).join("")}-${hex.slice(10).join("")}`;
 }
 
-export function createWorkoutRecords(input, { sessionId = createId(), startedAt = "", endedAt = "" } = {}) {
+export function createWorkoutRecords(input, { sessionId = createId(), startedAt = "", endedAt = "", preserveSetIds = false } = {}) {
   const now = new Date().toISOString();
   const session = {
     session_id: sessionId,
@@ -77,7 +77,7 @@ export function createWorkoutRecords(input, { sessionId = createId(), startedAt 
     schema_version: "1",
   };
   const sets = input.exercises.flatMap((exercise) => exercise.sets.map((set, setIndex) => ({
-    set_id: createId(),
+    set_id: preserveSetIds && set.setId ? set.setId : createId(),
     session_id: sessionId,
     exercise_name: exercise.name.trim(),
     exercise_category: exercise.category,

@@ -173,6 +173,17 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   await page.locator('[data-plan-run-exercises] [data-set-completed]').first().check();
   await expect(page.locator('[data-plan-run-exercises] [data-set]').first()
     .locator("[data-inline-rest]")).toHaveAttribute("data-rest-state", "running");
+  // Adding after a completed set must not clone performance/completion.
+  await secondSet.locator("[data-set-weight]").fill("60");
+  await secondSet.locator("[data-set-rpe]").fill("7");
+  await secondSet.locator("[data-set-completed]").check();
+  await page.locator('[data-plan-run-exercises] [data-add-set]').first().click();
+  const extraSet = page.locator('[data-plan-run-exercises] [data-exercise]').first()
+    .locator('[data-set]').last();
+  await expect(extraSet.locator('[data-set-completed]')).not.toBeChecked();
+  await expect(extraSet.locator('[data-set-rpe]')).toHaveValue("");
+  await expect(extraSet).toHaveAttribute('data-planned-set-id', '');
+  await secondSet.locator('[data-set-completed]').uncheck();
   await page.locator("[data-plan-run-save]").click();
   await expect(page).toHaveURL(/records$/);
   await expect(page.locator("[data-records-output] .record-session-title")).toContainText("Week 1 · Day 1");
@@ -194,5 +205,40 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   expect(actual[actualColumns.indexOf("weight_kg")]).toBe("60");
   expect(actual[actualColumns.indexOf("rpe")]).toBe("6");
   expect(actual[actualColumns.indexOf("notes")]).toBe("");
+  // Exercise identity survives the complete list -> editor -> Sheets path.
+  const originalSetId = actual[actualColumns.indexOf("set_id")];
+  const originalPlanSetId = actual[actualColumns.indexOf("planned_set_id")];
+  const originalCreatedAt = actual[actualColumns.indexOf("created_at")];
+  await page.locator('[data-records-output]').getByRole('button', { name: '編輯', exact: true }).click();
+  const editExercise = page.locator('[data-exercises] [data-exercise]').first();
+  await editExercise.locator('[data-exercise-name]').fill('Renamed Pause Squat');
+  await editExercise.locator('[data-set-weight]').first().fill('65');
+  await editExercise.locator('[data-add-set]').click();
+  await expect(editExercise.locator('[data-set-rpe]').last()).toHaveValue('');
+  await editExercise.locator('[data-set-weight]').last().fill('55');
+  await page.locator('[data-save-record]').click();
+  await expect(page).toHaveURL(/records$/);
+  await expect(page.locator('[data-records-output]')).toContainText('Renamed Pause Squat');
+  await expect(page.locator('[data-records-output]')).toContainText('65 kg');
+  await expect(page.locator('[data-records-output]')).toContainText('55 kg');
+  expect(sheets.get('Sessions').rows).toHaveLength(2);
+  expect(sheets.get('Sets').rows).toHaveLength(3);
+  const editedRows = sheets.get('Sets').rows.slice(1);
+  expect(editedRows[0][actualColumns.indexOf('set_id')]).toBe(originalSetId);
+  expect(editedRows[0][actualColumns.indexOf('planned_set_id')]).toBe(originalPlanSetId);
+  expect(editedRows[0][actualColumns.indexOf('created_at')]).toBe(originalCreatedAt);
+  expect(editedRows[1][actualColumns.indexOf('set_id')]).not.toBe(originalSetId);
+  expect(editedRows[1][actualColumns.indexOf('planned_set_id')]).toBe('');
+  // Removing the original group member does not transfer its link to the extra.
+  const extraId = editedRows[1][actualColumns.indexOf('set_id')];
+  await page.locator('[data-records-output]').getByRole('button', { name: '編輯', exact: true }).click();
+  await page.locator('[data-exercises] [data-remove-set]').first().click();
+  await page.locator('[data-save-record]').click();
+  await expect(page).toHaveURL(/records$/);
+  await expect(page.locator('[data-records-output]')).toContainText('55 kg');
+  await expect(page.locator('[data-records-output]')).not.toContainText('65 kg');
+  expect(sheets.get('Sets').rows).toHaveLength(2);
+  expect(sheets.get('Sets').rows[1][actualColumns.indexOf('set_id')]).toBe(extraId);
+  expect(sheets.get('Sets').rows[1][actualColumns.indexOf('planned_set_id')]).toBe('');
   expect(errors).toEqual([]);
 });
