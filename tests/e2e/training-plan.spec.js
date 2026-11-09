@@ -231,7 +231,8 @@ test("Plan manager activates the legacy schema, creates and edits a plan" + (rec
     await page.locator('[data-plan-run-help]').click();
     page.once('dialog', dialog => dialog.accept());
     await page.getByRole('button', { name: '啟用訓練計畫資料表' }).click();
-    await expect(page.locator('[data-schema-status]')).toContainText('訓練計畫資料表已啟用');
+    await expect.poll(() => sheets.get('Sets').rows[0]).toContain('planned_set_id');
+    await expect(page.locator('[data-schema-status]')).toContainText(/訓練計畫資料表已(?:啟用|通過檢查)/);
     await page.locator('[data-route-link="/training-plan"]').click();
     await expect(firstSet.locator('[data-set-weight]')).toHaveValue('60');
     await expect(firstSet.locator('[data-set-weight]')).toBeDisabled();
