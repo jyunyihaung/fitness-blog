@@ -171,3 +171,50 @@ describe("Editing linked actual sets", () => {
     expect(state.writes).toHaveLength(2);
   });
 });
+
+
+describe("Uncertain linked workout saves", () => {
+  it("deduplicates a committed request whose response was lost", async () => {
+    const state = fakeWorkbook();
+    let loseResponse = true;
+    vi.stubGlobal("fetch", async (url, options) => {
+      const response = await state.handler(url, options);
+      if (options?.method === "POST" && loseResponse) {
+        loseResponse = false;
+        throw new TypeError("synthetic connection lost");
+      }
+      return response;
+    });
+    const frozen = record();
+    await expect(appendLinkedWorkoutRecord(SHEET, TOKEN, frozen)).rejects.toThrow("connection lost");
+    await expect(appendLinkedWorkoutRecord(SHEET, TOKEN, frozen))
+      .resolves.toEqual({ sessionId: "session-one", alreadyExists: true });
+    expect(state.writes).toHaveLength(1);
+  });
+
+  it.each(["weight", "missing-set", "duplicate-set", "session-notes"])(
+    "rejects a retry with different stored content: %s", async (change) => {
+      const state = fakeWorkbook();
+      vi.stubGlobal("fetch", state.handler);
+      await appendLinkedWorkoutRecord(SHEET, TOKEN, record());
+      const table = state.tables.get("Sets");
+      if (change === "weight") table.rows[1][table.rows[0].indexOf("weight_kg")] = "70";
+      if (change === "missing-set") table.rows.pop();
+      if (change === "duplicate-set") table.rows.push([...table.rows[1]]);
+      if (change === "session-notes") {
+        const sessions = state.tables.get("Sessions");
+        sessions.rows[1][sessions.rows[0].indexOf("notes")] = "Changed remotely";
+      }
+      await expect(appendLinkedWorkoutRecord(SHEET, TOKEN, record()))
+        .rejects.toMatchObject({ code: "linked_record_conflict" });
+      expect(state.writes).toHaveLength(1);
+    });
+
+  it("exposes an actionable schema error without including upstream content", async () => {
+    const state = fakeWorkbook({ includeLinks: false });
+    vi.stubGlobal("fetch", state.handler);
+    await expect(appendLinkedWorkoutRecord(SHEET, TOKEN, record()))
+      .rejects.toMatchObject({ code: "linked_schema_missing", message: expect.stringContaining("設定") });
+    expect(state.writes).toHaveLength(0);
+  });
+});
