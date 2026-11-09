@@ -1,4 +1,6 @@
 const SAFE_MESSAGES = {
+  linked_schema_missing: "尚未建立訓練課表關聯欄位，請前往設定執行「啟用訓練計畫資料表」，再返回重試。",
+  linked_record_conflict: "已找到相同訓練 ID，但儲存內容或組數與本次不同。草稿已保留；請查看紀錄核對，不會覆寫或重複新增。",
   authorization_cancelled: "操作已取消，你可以再試一次。",
   authorization_expired: "Google 授權已過期，請重新連線。",
   permission_denied: "目前 Google 帳號沒有存取這份試算表的權限。",

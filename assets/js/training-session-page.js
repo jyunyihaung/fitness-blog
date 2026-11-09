@@ -25,6 +25,22 @@ const managerSections = [
 const add = page.querySelector("[data-plan-run-add]");
 let active = null;
 let busy = false;
+let pending = null;
+const reconnect = page.querySelector("[data-plan-run-reconnect]");
+const schemaHelp = page.querySelector("[data-plan-run-help]");
+const review = page.querySelector("[data-plan-run-review]");
+const save = page.querySelector("[data-plan-run-save]");
+
+function renderActive() {
+  page.dataset.trainingActive = String(Boolean(active));
+  panel.hidden = !active;
+  if (active) managerSections.forEach(section => { section.hidden = true; });
+  setBusy(busy);
+}
+
+function sameSpreadsheet() {
+  return appState.get("selectedSpreadsheet")?.id === active?.spreadsheetId;
+}
 
 function showStatus(message, state = "idle") {
   output.textContent = message;
@@ -36,11 +52,19 @@ function setBusy(value) {
   panel.querySelectorAll("button, input, select, textarea").forEach((el) => {
     el.disabled = value;
   });
+  // Freeze the first submission until its outcome has been reconciled. Never
+  // silently discard edits made after a response was lost.
+  if (pending) form.querySelectorAll("input, select, textarea, button").forEach(el => { el.disabled = true; });
+  save.disabled = value;
+  save.textContent = pending ? "確認儲存結果／重試" : "儲存已完成組數";
 }
 
 function end({ saved = false } = {}) {
   if (!active) return;
   active = null;
+  pending = null;
+  page.dataset.trainingActive = "false";
+  reconnect.hidden = schemaHelp.hidden = review.hidden = true;
   window.dispatchEvent(new CustomEvent("fitness:training-plan-stop"));
   panel.hidden = true;
   managerSections.forEach((section) => { section.hidden = false; });
@@ -69,7 +93,8 @@ window.addEventListener("fitness:training-plan-start", (event) => {
       ? "活動目標（例如步數）不會當作重量訓練組數儲存：" + draft.skipped.join("、")
       : "";
     managerSections.forEach((section) => { section.hidden = true; });
-    panel.hidden = false;
+    renderActive();
+    setBusy(false);
     showStatus("請填入實際執行內容，勾選完成的組數後再儲存。");
     panel.scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (error) {
@@ -79,7 +104,9 @@ window.addEventListener("fitness:training-plan-start", (event) => {
 
 page.querySelector("[data-plan-run-cancel]").addEventListener("click", () => {
   if (!active || busy) return;
-  if (window.confirm("返回課表會放棄尚未儲存的實際訓練內容，確定返回？")) end();
+  if (window.confirm(pending
+    ? "儲存結果尚待核對，可能已寫入。請先查看紀錄；仍要放棄此草稿並返回課表？"
+    : "返回課表會放棄尚未儲存的實際訓練內容，確定返回？")) end();
 });
 
 add.addEventListener("click", () => {
@@ -93,11 +120,11 @@ form.addEventListener("submit", async (event) => {
   if (!active || busy) return;
   const selectedSpreadsheet = appState.get("selectedSpreadsheet");
   if (!selectedSpreadsheet?.id || selectedSpreadsheet.id !== active.spreadsheetId) {
-    return showStatus("已切換 Google Sheet；請返回課表重新開始以避免寫入錯誤資料。", "error");
+    return showStatus("已切換 Google Sheet；草稿仍保留，請切回原試算表後再儲存。", "error");
   }
-  let prepared;
+  let prepared = pending;
   try {
-    prepared = prepareCompletedPlannedWorkout(active.draft, editor.read(), {
+    prepared ??= prepareCompletedPlannedWorkout(active.draft, editor.read(), {
       sessionId: active.sessionId,
       trainingDate: form.elements.namedItem("training_date").value,
       durationMinutes: form.elements.namedItem("duration_minutes").value,
@@ -106,19 +133,29 @@ form.addEventListener("submit", async (event) => {
   } catch (error) {
     return showStatus(String(error.message || "請確認實際完成的組數。"), "error");
   }
+  pending = prepared;
   setBusy(true);
-  showStatus("正在儲存已完成組數…");
+  reconnect.hidden = schemaHelp.hidden = review.hidden = true;
+  showStatus("正在儲存或確認先前儲存結果…");
   try {
     const token = googleAuth.getValidAccessToken() ?? await googleAuth.getAccessToken();
+    if (!sameSpreadsheet()) {
+      showStatus("已切換 Google Sheet，未送出儲存；請切回原試算表後重試。", "error");
+      return;
+    }
     const activeSpreadsheetId = active.spreadsheetId;
     const result = await appendLinkedWorkoutRecord(activeSpreadsheetId, token, prepared.records);
     // The linked workout itself is already safe if exercise master sync fails.
-    if (!result.alreadyExists) {
+    if (!result.alreadyExists && sameSpreadsheet()) {
       try {
         appState.set("exercises", await syncUsedExercises(active.spreadsheetId, token, prepared.input.exercises));
       } catch (_) {
         showStatus("訓練紀錄已儲存，但動作清單同步失敗；原始紀錄不受影響。", "success");
       }
+    }
+    if (!sameSpreadsheet()) {
+      showStatus("原試算表的訓練已儲存。請切回原試算表後確認結果；目前草稿已保留。", "success");
+      return;
     }
     window.dispatchEvent(new CustomEvent("fitness:data-changed", {
       detail: { source: "training-plan", sessionId: result.sessionId },
@@ -133,7 +170,14 @@ form.addEventListener("submit", async (event) => {
     }));
   } catch (error) {
     reportAppError("save-linked-training-session", error);
-    showStatus(safeErrorMessage(error, "儲存失敗，請重試。完成組數及訓練 ID 均已保留。"), "error");
+    if (error.code === "authorization_expired" || error.code === "permission_denied") {
+      googleAuth.clear();
+      reconnect.hidden = false;
+    }
+    schemaHelp.hidden = error.code !== "linked_schema_missing";
+    review.hidden = !pending;
+    showStatus(safeErrorMessage(error, "無法確認儲存結果，請檢查連線後重試。")
+      + " 首次送出的內容已保留並暫停編輯，請按「確認儲存結果／重試」。", "error");
   } finally {
     setBusy(false);
   }
@@ -143,10 +187,30 @@ window.addEventListener("fitness:state-change", (event) => {
   if (event.detail.key === "exercises") editor.setExerciseOptions(event.detail.value);
   if (event.detail.key === "selectedSpreadsheet" && active &&
       event.detail.value?.id !== active.spreadsheetId) {
-    showStatus("目前選擇的試算表已變更；請放棄草稿並重新從課表開始。", "error");
+    showStatus("目前選擇的試算表已變更；草稿仍保留，請切回原試算表後繼續。", "error");
   }
+  if (active) renderActive();
+});
+
+reconnect.addEventListener("click", async () => {
+  if (!active || busy) return;
+  if (!sameSpreadsheet()) return showStatus("請先切回原試算表，再重新連線。", "error");
+  setBusy(true);
+  try {
+    await googleAuth.requestAccessToken();
+    reconnect.hidden = true;
+    showStatus("已重新連線，草稿保留。請按儲存按鈕重試。");
+  } catch (error) {
+    showStatus(safeErrorMessage(error, "重新連線失敗，草稿仍保留。"), "error");
+  } finally { setBusy(false); }
 });
 
 window.addEventListener("fitness:route-change", (event) => {
-  if (event.detail.route !== "/training-plan" && active && !busy) end();
+  if (active && event.detail.route === "/training-plan") renderActive();
+});
+
+window.addEventListener("beforeunload", (event) => {
+  if (!active) return;
+  event.preventDefault();
+  event.returnValue = "";
 });

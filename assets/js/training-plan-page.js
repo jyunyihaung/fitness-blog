@@ -316,7 +316,7 @@ saveExercisesButton.addEventListener("click", () => {
 });
 
 window.addEventListener("fitness:route-change", (event) => {
-  if (event.detail.route !== "/training-plan") return;
+  if (event.detail.route !== "/training-plan" || page.dataset.trainingActive === "true") return;
   if (googleAuth.getValidAccessToken() && appState.get("selectedSpreadsheet")?.id) {
     operation(async () => { await reload(); });
   } else {

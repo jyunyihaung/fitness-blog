@@ -1,4 +1,4 @@
-import { googleApiError, schemaError } from "./app-error.js";
+import { AppError, googleApiError, schemaError } from "./app-error.js";
 import { parseExercises, planExerciseSync } from "./exercises.js";
 import { PLAN_TITLES, PLAN_HEADERS, PLAN_SCHEMA_VERSION } from "./training-plan-model.js";
 import { EXECUTION_LINK_HEADERS } from "./training-session-domain.js";
@@ -601,21 +601,23 @@ export async function appendLinkedWorkoutRecord(spreadsheetId, accessToken, reco
   const fields = encodeURIComponent("sheets.properties(sheetId,title)");
   const [metadata, valuesByRange] = await Promise.all([
     apiRequest(base + "?fields=" + fields, accessToken),
-    readRanges(spreadsheetId, accessToken, ["Sessions", "Sets!1:1"]),
+    readRanges(spreadsheetId, accessToken, ["Sessions", "Sets"]),
   ]);
   const sheetIds = new Map(metadata.sheets?.map((sheet) => [
     sheet.properties?.title, sheet.properties?.sheetId,
   ]));
   const sessions = sheetRowRecords(valuesByRange[0] ?? []);
   const sessionHeaders = sessions.headers;
-  const setHeaders = (valuesByRange[1]?.[0] ?? []).map(String);
+  const savedSets = sheetRowRecords(valuesByRange[1] ?? []);
+  const setHeaders = savedSets.headers;
   for (const [title, headers, additional] of [
     ["Sessions", sessionHeaders, ["plan_id", "planned_workout_id"]],
     ["Sets", setHeaders, ["planned_set_id"]],
   ]) {
     if (!Number.isInteger(sheetIds.get(title))) throw new Error("缺少 " + title + " 工作表。");
     const missing = [...HEADERS[title], ...additional].filter((name) => !headers.includes(name));
-    if (missing.length) throw new Error(title + " 尚未建立訓練課表關聯欄位，請至設定執行欄位更新：" + missing.join(", "));
+    if (missing.length) throw new AppError("linked_schema_missing");
+    if (headers.length !== new Set(headers).size) throw schemaError();
   }
   const sameId = sessions.rows.filter(({ record: row }) => row.session_id === record.session.session_id);
   if (sameId.length > 1) throw new Error("發現重複工作階段 ID，請先確認試算表資料。");
@@ -625,6 +627,19 @@ export async function appendLinkedWorkoutRecord(spreadsheetId, accessToken, reco
         stored.planned_workout_id !== record.session.planned_workout_id) {
       throw new Error("工作階段 ID 已被其他課表紀錄使用。");
     }
+    // A stable ID alone is insufficient: confirm the complete frozen payload,
+    // including sets, before declaring an uncertain write successful.
+    const storedSets = savedSets.rows.map(r => r.record)
+      .filter(set => set.session_id === record.session.session_id);
+    const sameFields = (left, right, keys) => keys.every(key =>
+      String(left[key] ?? "").trim() === String(right[key] ?? "").trim());
+    const byId = new Map(storedSets.map(set => [set.set_id, set]));
+    const matches = sameFields(stored, record.session, [...HEADERS.Sessions, "plan_id", "planned_workout_id"])
+      && storedSets.length === record.sets.length && byId.size === storedSets.length
+      && new Set(record.sets.map(set => set.set_id)).size === record.sets.length
+      && record.sets.every(set => byId.has(set.set_id)
+        && sameFields(byId.get(set.set_id), set, [...HEADERS.Sets, "planned_set_id"]));
+    if (!matches) throw new AppError("linked_record_conflict");
     return { sessionId: record.session.session_id, alreadyExists: true };
   }
   await apiRequest(base + ":batchUpdate", accessToken, {

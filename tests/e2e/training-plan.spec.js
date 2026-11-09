@@ -4,7 +4,10 @@ import { PLAN_HEADERS } from "../../assets/js/training-plan-model.js";
 
 // Synthetic end-to-end Phase 1+2 exercise. No user workbook or live OAuth
 // credentials are accessed. The browser still runs the real page/controllers.
-test("Plan manager activates the legacy schema, creates and edits a plan", async ({ page }) => {
+for (const recovery of [false, true]) {
+test("Plan manager activates the legacy schema, creates and edits a plan" + (recovery ? " with save recovery" : ""), async ({ page }) => {
+  test.setTimeout(60_000);
+  let failureMode = "";
   const sheets = new Map(Object.entries(HEADERS).map(([title, headers], id) =>
     [title, { id, rows: [[...headers]] }]));
   sheets.get("Schema").rows.push(
@@ -34,6 +37,10 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
       status: 200, contentType: "application/json", body: JSON.stringify(payload),
     });
     if (method === "GET" && path.endsWith("/plan-e2e")) {
+      if (failureMode === "auth") {
+        failureMode = "";
+        return route.fulfill({ status: 401, contentType: "application/json", body: "{}" });
+      }
       return respond({
         spreadsheetId: "plan-e2e", properties: { title: "Synthetic Training Copy" },
         sheets: [...sheets].map(([title, value]) => ({ properties: { title, sheetId: value.id } })),
@@ -57,6 +64,11 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
       return respond({});
     }
     if (method === "POST" && path.endsWith(":batchUpdate")) {
+      const linkedSave = data.requests?.some(r => r.appendCells?.sheetId === sheets.get("Sessions").id);
+      if (linkedSave && failureMode === "network") {
+        failureMode = "";
+        return route.abort("failed");
+      }
       for (const request of data.requests ?? []) {
         if (request.addSheet) {
           sheets.set(request.addSheet.properties.title, { id: nextSheetId++, rows: [] });
@@ -77,6 +89,10 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
           const sheet = [...sheets.values()].find((value) => value.id === range.sheetId);
           sheet.rows.splice(range.startIndex, range.endIndex - range.startIndex);
         }
+      }
+      if (linkedSave && failureMode === "lost-response") {
+        failureMode = "";
+        return route.abort("failed");
       }
       return respond({});
     }
@@ -184,6 +200,59 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   await expect(extraSet.locator('[data-set-rpe]')).toHaveValue("");
   await expect(extraSet).toHaveAttribute('data-planned-set-id', '');
   await secondSet.locator('[data-set-completed]').uncheck();
+  if (recovery) {
+    // Ordinary navigation preserves DOM draft, completion and notes.
+    await page.locator('[data-route-link="/dashboard"]').click();
+    await page.locator('[data-route-link="/training-plan"]').click();
+    await expect(firstSet.locator('[data-set-weight]')).toHaveValue('60');
+    await expect(firstSet.locator('[data-set-completed]')).toBeChecked();
+    // A different workbook must never receive this draft.
+    await page.evaluate(async () => {
+      const { appState } = await import('./assets/js/app-state.js');
+      appState.set('selectedSpreadsheet', { id: 'other-test-copy' });
+    });
+    await page.locator('[data-plan-run-save]').click();
+    await expect(page.locator('[data-plan-run-status]')).toContainText('已切換');
+    expect(sheets.get('Sessions').rows).toHaveLength(1);
+    await page.evaluate(async () => {
+      const { appState } = await import('./assets/js/app-state.js');
+      appState.set('selectedSpreadsheet', { id: 'plan-e2e', name: 'Synthetic Training Copy' });
+    });
+    failureMode = 'auth';
+    await page.locator('[data-plan-run-save]').click();
+    await expect(page.locator('[data-plan-run-reconnect]')).toBeVisible();
+    await expect(firstSet.locator('[data-set-weight]')).toBeDisabled();
+    await page.locator('[data-plan-run-reconnect]').click();
+    await expect(page.locator('[data-plan-run-status]')).toContainText('已重新連線');
+    // Repair the optional columns via the real Settings workflow, then return.
+    sheets.get('Sets').rows[0].splice(sheets.get('Sets').rows[0].indexOf('planned_set_id'), 1);
+    await page.locator('[data-plan-run-save]').click();
+    await expect(page.locator('[data-plan-run-status]')).toContainText('關聯欄位');
+    await page.locator('[data-plan-run-help]').click();
+    page.once('dialog', dialog => dialog.accept());
+    await page.getByRole('button', { name: '啟用訓練計畫資料表' }).click();
+    await expect.poll(() => sheets.get('Sets').rows[0]).toContain('planned_set_id');
+    await expect(page.locator('[data-schema-status]')).toContainText(/訓練計畫資料表已(?:啟用|通過檢查)/);
+    await page.locator('[data-route-link="/training-plan"]').click();
+    await expect(firstSet.locator('[data-set-weight]')).toHaveValue('60');
+    await expect(firstSet.locator('[data-set-weight]')).toBeDisabled();
+    failureMode = 'network';
+    await page.locator('[data-plan-run-save]').click();
+    await expect(page.locator('[data-plan-run-status]')).toContainText('無法確認');
+    expect(sheets.get('Sessions').rows).toHaveLength(1);
+    failureMode = 'lost-response';
+    await page.locator('[data-plan-run-save]').click();
+    await expect(page.locator('[data-plan-run-status]')).toContainText('無法確認');
+    expect(sheets.get('Sessions').rows).toHaveLength(2);
+    const table = sheets.get('Sets');
+    const weightCol = table.rows[0].indexOf('weight_kg');
+    table.rows[1][weightCol] = '70';
+    await page.locator('[data-plan-run-save]').click();
+    await expect(page.locator('[data-plan-run-status]')).toContainText('本次不同');
+    await expect(page.locator('[data-plan-run-review]')).toBeVisible();
+    expect(sheets.get('Sessions').rows).toHaveLength(2);
+    table.rows[1][weightCol] = '60';
+  }
   await page.locator("[data-plan-run-save]").click();
   await expect(page).toHaveURL(/records$/);
   await expect(page.locator("[data-records-output] .record-session-title")).toContainText("Week 1 · Day 1");
@@ -242,3 +311,5 @@ test("Plan manager activates the legacy schema, creates and edits a plan", async
   expect(sheets.get('Sets').rows[1][actualColumns.indexOf('planned_set_id')]).toBe('');
   expect(errors).toEqual([]);
 });
+
+}
